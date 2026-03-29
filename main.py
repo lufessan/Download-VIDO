@@ -3077,36 +3077,50 @@ def estimate_size():
 
         info = None
         last_error = None
-        format_attempts = [
-            'bestvideo*+bestaudio*/best*',
-            'best*',
-            'best',
-            None,
-        ]
-        for fmt in format_attempts:
-            try:
-                if fmt is not None:
-                    ydl_opts['format'] = fmt
-                elif 'format' in ydl_opts:
-                    del ydl_opts['format']
-                logging.info(f"[EstimateSize] Trying format: {fmt}")
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(url, download=False)
-                if info:
-                    logging.info(f"[EstimateSize] Success with format: {fmt}")
+
+        cookie_modes = [True, False] if has_cookies_est else [False]
+        for use_cookies in cookie_modes:
+            if use_cookies:
+                ydl_opts['cookiefile'] = COOKIES_FILE_PATH
+                logging.info(f"[EstimateSize] Trying WITH cookies")
+            else:
+                ydl_opts.pop('cookiefile', None)
+                if not use_cookies and has_cookies_est:
+                    logging.info(f"[EstimateSize] Retrying WITHOUT cookies (fallback)")
+
+            format_attempts = [
+                'bestvideo*+bestaudio*/best*',
+                'best*',
+                'best',
+                None,
+            ]
+            success = False
+            for fmt in format_attempts:
+                try:
+                    if fmt is not None:
+                        ydl_opts['format'] = fmt
+                    elif 'format' in ydl_opts:
+                        del ydl_opts['format']
+                    logging.info(f"[EstimateSize] Trying format: {fmt} (cookies={'yes' if use_cookies else 'no'})")
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                    if info:
+                        logging.info(f"[EstimateSize] Success with format: {fmt} (cookies={'yes' if use_cookies else 'no'})")
+                        success = True
+                        break
+                except yt_dlp.utils.DownloadError as e:
+                    last_error = str(e)
+                    logging.warning(f"[EstimateSize] Format {fmt} failed: {last_error[:100]}")
+                    if 'Sign in' in last_error or 'bot' in last_error.lower():
+                        break
+                    if 'Requested format is not available' in last_error:
+                        continue
                     break
-            except yt_dlp.utils.DownloadError as e:
-                last_error = str(e)
-                logging.warning(f"[EstimateSize] Format {fmt} failed: {last_error[:100]}")
-                if 'Sign in' in last_error or 'bot' in last_error.lower():
-                    ydl_opts['extractor_args']['youtube']['player_client'] = ['android_vr', 'ios', 'tv_embedded']
-                    continue
-                if 'Requested format is not available' in last_error:
-                    continue
-                break
-            except Exception as e:
-                last_error = str(e)
-                logging.error(f"[EstimateSize] Unexpected error with format {fmt}: {last_error[:100]}")
+                except Exception as e:
+                    last_error = str(e)
+                    logging.error(f"[EstimateSize] Unexpected error: {last_error[:100]}")
+                    break
+            if success:
                 break
 
         if not info:
@@ -3400,27 +3414,43 @@ def download_video():
             },
         }
 
-        if has_cookies:
-            info_opts['cookiefile'] = COOKIES_FILE_PATH
+        info = None
+        info_error = None
+        for try_cookies in ([True, False] if has_cookies else [False]):
+            try:
+                if try_cookies:
+                    info_opts['cookiefile'] = COOKIES_FILE_PATH
+                else:
+                    info_opts.pop('cookiefile', None)
+                logging.info(f"[Download] Getting info (cookies={'yes' if try_cookies else 'no'})")
+                with yt_dlp.YoutubeDL(info_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                if info:
+                    break
+            except Exception as e:
+                info_error = str(e)
+                logging.warning(f"[Download] Info extraction failed (cookies={'yes' if try_cookies else 'no'}): {info_error[:100]}")
+                if 'Sign in' in info_error or 'bot' in info_error.lower():
+                    continue
+                if 'Requested format is not available' in info_error:
+                    continue
+                break
 
-        with yt_dlp.YoutubeDL(info_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        if not info:
+            return jsonify(
+                {'error': f'لم يتم العثور على محتوى في هذا الرابط: {(info_error or "")[:100]}'}), 400
 
-            if not info:
-                return jsonify(
-                    {'error': 'لم يتم العثور على محتوى في هذا الرابط'}), 400
+        if info.get('_type') == 'playlist' or 'entries' in info:
+            return jsonify({
+                'error':
+                'لا يمكن تحميل قوائم التشغيل. الرجاء استخدام رابط واحد.'
+            }), 400
 
-            if info.get('_type') == 'playlist' or 'entries' in info:
-                return jsonify({
-                    'error':
-                    'لا يمكن تحميل قوائم التشغيل. الرجاء استخدام رابط واحد.'
-                }), 400
+        media_title = info.get('title', 'media')
+        media_title = re.sub(r'[\\/*?:"<>|]', '', media_title)[:50]
 
-            media_title = info.get('title', 'media')
-            media_title = re.sub(r'[\\/*?:"<>|]', '', media_title)[:50]
-
-            if info.get('is_live'):
-                return jsonify({'error': 'لا يمكن تحميل البث المباشر.'}), 400
+        if info.get('is_live'):
+            return jsonify({'error': 'لا يمكن تحميل البث المباشر.'}), 400
 
         is_tiktok = 'tiktok.com' in url.lower() or 'douyin.com' in url.lower()
         is_instagram = 'instagram.com' in url.lower()
@@ -3526,33 +3556,47 @@ def download_video():
 
         download_success = False
         last_dl_error = None
-        fallback_formats = ['bestvideo*+bestaudio*/best*', 'best*', 'best']
-        fallback_idx = 0
-        for dl_attempt in range(4):
-            try:
-                logging.info(f"[Download] Attempt {dl_attempt+1} with format: {ydl_opts.get('format', 'default')}")
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-                download_success = True
-                break
-            except yt_dlp.utils.DownloadError as e:
-                last_dl_error = str(e)
-                logging.warning(f'[Download] Attempt {dl_attempt+1} failed: {last_dl_error[:100]}')
-                if 'Requested format is not available' in last_dl_error:
-                    if fallback_idx < len(fallback_formats):
-                        ydl_opts['format'] = fallback_formats[fallback_idx]
-                        fallback_idx += 1
-                        if download_format == 'video':
-                            ydl_opts['merge_output_format'] = 'mp4'
-                        continue
+        original_format = ydl_opts.get('format', 'bestvideo*+bestaudio*/best*')
+        cookie_modes_dl = [True, False] if has_cookies else [False]
+
+        for use_cookies_dl in cookie_modes_dl:
+            if use_cookies_dl:
+                ydl_opts['cookiefile'] = cookiefile_opt if cookiefile_opt else COOKIES_FILE_PATH
+            else:
+                ydl_opts.pop('cookiefile', None)
+                if has_cookies:
+                    logging.info("[Download] Retrying WITHOUT cookies (fallback)")
+
+            ydl_opts['format'] = original_format
+            fallback_formats = ['bestvideo*+bestaudio*/best*', 'best*', 'best']
+            fallback_idx = 0
+            for dl_attempt in range(4):
+                try:
+                    logging.info(f"[Download] Attempt {dl_attempt+1} format={ydl_opts.get('format','default')} cookies={'yes' if use_cookies_dl else 'no'}")
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        ydl.download([url])
+                    download_success = True
                     break
-                elif 'Sign in' in last_dl_error or 'bot' in last_dl_error.lower():
+                except yt_dlp.utils.DownloadError as e:
+                    last_dl_error = str(e)
+                    logging.warning(f'[Download] Attempt {dl_attempt+1} failed: {last_dl_error[:100]}')
+                    if 'Requested format is not available' in last_dl_error:
+                        if fallback_idx < len(fallback_formats):
+                            ydl_opts['format'] = fallback_formats[fallback_idx]
+                            fallback_idx += 1
+                            if download_format == 'video':
+                                ydl_opts['merge_output_format'] = 'mp4'
+                            continue
+                        break
+                    elif 'Sign in' in last_dl_error or 'bot' in last_dl_error.lower():
+                        break
+                    else:
+                        break
+                except Exception as e:
+                    last_dl_error = str(e)
+                    logging.error(f'[Download] Unexpected error: {e}')
                     break
-                else:
-                    break
-            except Exception as e:
-                last_dl_error = str(e)
-                logging.error(f'[Download] Unexpected error: {e}')
+            if download_success:
                 break
 
         if not download_success:
