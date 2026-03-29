@@ -3266,7 +3266,16 @@ def download_video():
         else:
             output_file = f'{output_template}.mp4'
 
+        has_cookies = os.path.exists('cookies.txt')
+
+        # When cookies are available, don't skip HLS/DASH — age-restricted videos need them
         age_bypass_extractor_args = {
+            'youtube': {
+                'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
+            }
+        }
+        # Without cookies, skip HLS/DASH to avoid bot-detection formats
+        age_bypass_extractor_args_no_cookies = {
             'youtube': {
                 'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                 'skip': ['hls', 'dash'],
@@ -3280,17 +3289,20 @@ def download_video():
             'noplaylist': True,
             'retries': 3,
             'age_limit': 99,
-            'extractor_args': age_bypass_extractor_args,
+            'nocheckcertificate': True,
+            'geo_bypass': True,
+            'extractor_args': age_bypass_extractor_args if has_cookies else age_bypass_extractor_args_no_cookies,
             'http_headers': {
                 'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Accept':
                 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
+                'Referer': 'https://www.youtube.com/',
             },
         }
 
-        if os.path.exists('cookies.txt'):
+        if has_cookies:
             info_opts['cookiefile'] = 'cookies.txt'
 
         with yt_dlp.YoutubeDL(info_opts) as ydl:
@@ -3328,26 +3340,23 @@ def download_video():
         cookiefile_opt = 'cookies.txt' if os.path.exists(
             'cookies.txt') else None
 
+        dl_extractor_args = age_bypass_extractor_args if has_cookies else age_bypass_extractor_args_no_cookies
+
         if download_format == 'audio':
             ydl_opts = {
-                'format':
-                'bestaudio[ext=m4a]/bestaudio[ext=mp3]/bestaudio/best',
-                'outtmpl':
-                output_template + '.%(ext)s',
-                'noplaylist':
-                True,
-                'quiet':
-                True,
-                'no_warnings':
-                True,
-                'socket_timeout':
-                7200,
-                'retries':
-                5,
+                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio[ext=opus]/bestaudio/best',
+                'outtmpl': output_template + '.%(ext)s',
+                'noplaylist': True,
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 7200,
+                'retries': 5,
+                'fragment_retries': 10,
                 'age_limit': 99,
-                'extractor_args': age_bypass_extractor_args,
-                'http_headers':
-                common_headers,
+                'nocheckcertificate': True,
+                'geo_bypass': True,
+                'extractor_args': dl_extractor_args,
+                'http_headers': common_headers,
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
@@ -3359,30 +3368,19 @@ def download_video():
         else:
             if is_tiktok or is_instagram or is_twitter:
                 ydl_opts = {
-                    'format':
-                    'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio/bestvideo[ext=mp4]+bestaudio/best[ext=mp4][vcodec^=avc1]/best[ext=mp4]/best',
-                    'merge_output_format':
-                    'mp4',
-                    'outtmpl':
-                    output_template + '.%(ext)s',
-                    'noplaylist':
-                    True,
-                    'quiet':
-                    True,
-                    'no_warnings':
-                    True,
-                    'socket_timeout':
-                    7200,
-                    'retries':
-                    10,
-                    'fragment_retries':
-                    10,
-                    'http_headers':
-                    common_headers,
+                    'format': 'bestvideo[ext=mp4]+bestaudio/bestvideo+bestaudio/best[ext=mp4]/best',
+                    'merge_output_format': 'mp4',
+                    'outtmpl': output_template + '.%(ext)s',
+                    'noplaylist': True,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'socket_timeout': 7200,
+                    'retries': 10,
+                    'fragment_retries': 10,
+                    'http_headers': common_headers,
                     'extractor_args': {
                         'tiktok': {
-                            'api_hostname':
-                            'api22-normal-c-useast1a.tiktokv.com'
+                            'api_hostname': 'api22-normal-c-useast1a.tiktokv.com'
                         }
                     },
                     'postprocessors': [{
@@ -3392,53 +3390,84 @@ def download_video():
                     'postprocessor_args': {
                         'FFmpegVideoConvertor': [
                             '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
-                            '-c:a', 'aac', '-b:a', '128k', '-movflags',
-                            '+faststart'
+                            '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart'
                         ]
                     },
                 }
                 if cookiefile_opt:
                     ydl_opts['cookiefile'] = cookiefile_opt
             else:
+                # YouTube and other sites — very permissive format chain
                 ydl_opts = {
-                    'format':
-                    'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best',
-                    'merge_output_format':
-                    'mp4',
-                    'outtmpl':
-                    output_template + '.%(ext)s',
-                    'noplaylist':
-                    True,
-                    'quiet':
-                    True,
-                    'no_warnings':
-                    True,
-                    'socket_timeout':
-                    7200,
-                    'retries':
-                    5,
-                    'fragment_retries':
-                    5,
+                    'format': (
+                        'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
+                        'bestvideo[ext=mp4]+bestaudio/'
+                        'bestvideo+bestaudio[ext=m4a]/'
+                        'bestvideo+bestaudio/'
+                        'best[ext=mp4]/best'
+                    ),
+                    'merge_output_format': 'mp4',
+                    'outtmpl': output_template + '.%(ext)s',
+                    'noplaylist': True,
+                    'quiet': True,
+                    'no_warnings': True,
+                    'socket_timeout': 7200,
+                    'retries': 5,
+                    'fragment_retries': 10,
                     'age_limit': 99,
-                    'extractor_args': age_bypass_extractor_args,
-                    'http_headers':
-                    common_headers,
+                    'nocheckcertificate': True,
+                    'geo_bypass': True,
+                    'extractor_args': dl_extractor_args,
+                    'http_headers': common_headers,
                     'postprocessors': [{
                         'key': 'FFmpegVideoConvertor',
                         'preferedformat': 'mp4',
                     }],
                     'postprocessor_args': {
                         'FFmpegVideoConvertor': [
-                            '-c:v', 'libx264', '-c:a', 'aac', '-movflags',
-                            '+faststart'
+                            '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart'
                         ]
                     },
                 }
                 if cookiefile_opt:
                     ydl_opts['cookiefile'] = cookiefile_opt
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+        download_success = False
+        last_dl_error = None
+        for dl_attempt in range(3):
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+                download_success = True
+                break
+            except yt_dlp.utils.DownloadError as e:
+                last_dl_error = str(e)
+                logging.warning(f'[Download] Attempt {dl_attempt+1} failed: {last_dl_error[:100]}')
+                if 'Requested format is not available' in last_dl_error:
+                    # Fallback to most permissive format
+                    ydl_opts['format'] = 'bestvideo+bestaudio/best'
+                    if 'postprocessors' not in ydl_opts:
+                        ydl_opts['postprocessors'] = []
+                    if download_format == 'video':
+                        ydl_opts['merge_output_format'] = 'mp4'
+                    continue
+                elif 'Sign in' in last_dl_error or 'bot' in last_dl_error.lower():
+                    break  # No point retrying without cookies
+                else:
+                    break
+            except Exception as e:
+                last_dl_error = str(e)
+                logging.error(f'[Download] Unexpected error: {e}')
+                break
+
+        if not download_success:
+            cleanup_download_files(output_template, output_file)
+            err = last_dl_error or 'فشل في تحميل الفيديو'
+            if 'Sign in' in err or 'bot' in err.lower():
+                return jsonify({'error': 'يوتيوب يطلب تسجيل دخول. أضف ملف كوكيز لتحميل هذا الفيديو.'}), 400
+            if 'Requested format' in err:
+                return jsonify({'error': 'الصيغة المطلوبة غير متاحة لهذا الفيديو. جرب رابطاً آخر.'}), 400
+            return jsonify({'error': f'فشل في التحميل: {err[:150]}'}), 500
 
         if download_format == 'audio':
             if not os.path.exists(output_file):
