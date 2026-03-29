@@ -862,12 +862,18 @@ def _build_anime_response(jikan: dict, fallback: dict, method: str) -> dict:
 
 
 def search_anime_with_saucenao(image_path: str) -> dict | None:
-    """Try to identify anime using SauceNAO reverse image search - free API, works with fan art."""
+    """Try to identify anime using SauceNAO reverse image search. Requires SAUCENAO_API_KEY."""
+    api_key = os.environ.get('SAUCENAO_API_KEY', '').strip()
+    if not api_key:
+        logging.info('[SauceNAO] No API key configured (SAUCENAO_API_KEY). Skipping.')
+        return None
+
     try:
+        post_data = {'db': 999, 'output_type': 2, 'numres': 8, 'api_key': api_key}
         with open(image_path, 'rb') as img_file:
             resp = requests.post(
                 'https://saucenao.com/search.php',
-                data={'db': 999, 'output_type': 2, 'numres': 8},
+                data=post_data,
                 files={'file': ('image.jpg', img_file, 'image/jpeg')},
                 headers={'User-Agent': 'Mozilla/5.0 (compatible; ARKAN-AI/1.0)'},
                 timeout=25
@@ -877,6 +883,9 @@ def search_anime_with_saucenao(image_path: str) -> dict | None:
 
         if resp.status_code == 429:
             logging.warning('[SauceNAO] Rate limited (429). Skipping.')
+            return None
+        if resp.status_code == 403:
+            logging.warning('[SauceNAO] Forbidden (403) — API key invalid or not accepted.')
             return None
         if resp.status_code != 200:
             logging.warning(f'[SauceNAO] Unexpected status: {resp.status_code} — {resp.text[:200]}')
