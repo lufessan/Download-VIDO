@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Providers Dashboard - ARKAN AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --gold-primary: #d4a853;
+            --gold-secondary: #c4943f;
+            --turquoise-primary: #40e0d0;
+            --dark-bg: #0a0f1a;
+            --dark-surface: #111827;
+            --dark-card: #1a2332;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0f172a 50%, var(--dark-bg) 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .stat-card {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            border: 1px solid rgba(212, 168, 83, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+            transition: all 0.25s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(212, 168, 83, 0.4);
+        }
+        
+        .provider-card {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            border: 2px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .provider-card.configured {
+            border-color: rgba(34, 197, 94, 0.4);
+        }
+        
+        .provider-card.not-configured {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        .status-active { background: #22c55e; }
+        .status-inactive { background: #ef4444; }
+        
+        .gold-text { color: var(--gold-primary); }
+        .turquoise-text { color: var(--turquoise-primary); }
+        
+        .pharaonic-header {
+            background: linear-gradient(135deg, rgba(212, 168, 83, 0.1) 0%, transparent 50%, rgba(64, 224, 208, 0.1) 100%);
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, transparent, var(--gold-primary), transparent) 1;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .icon-container {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .icon-gold {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+        }
+        
+        .warning-banner {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="pharaonic-header flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                    <span class="gold-text">ARKAN</span>
+                    <span>لوحة تحكم AI</span>
+                </h1>
+                <p class="text-gray-400 mt-1">مراقبة وإدارة مزودي الذكاء الاصطناعي</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="refreshStats()" class="px-4 py-2 bg-slate-700/80 hover:bg-slate-600 text-white rounded-lg transition flex items-center gap-2 border border-slate-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    تحديث
+                </button>
+                <a href="{{ url_for('admin_logout') }}" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition border border-red-500">
+                    تسجيل الخروج
+                </a>
+            </div>
+        </header>
+
+        {% if show_warning %}
+        <div class="warning-banner p-4 mb-6 flex items-center gap-3">
+            <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="text-red-400 font-medium">تحذير: عدد كبير من الأخطاء اليوم. يرجى التحقق من إعدادات مزودي AI.</span>
+        </div>
+        {% endif %}
+
+        <h2 class="text-xl font-bold text-white mb-4">مزودو الذكاء الاصطناعي</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {% for provider in providers_info %}
+            <div class="provider-card p-6 {{ 'configured' if provider.is_configured else 'not-configured' }}">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-4">
+                        <div class="icon-container {{ 'bg-green-500/20' if provider.is_configured else 'bg-red-500/20' }}">
+                            {% if provider.name == 'Groq' %}
+                            <svg class="w-6 h-6 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                            {% else %}
+                            <svg class="w-6 h-6 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">{{ provider.name }}</h3>
+                            <p class="text-gray-400 text-sm">{{ provider.type }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full {{ 'status-active' if provider.is_configured else 'status-inactive' }}"></span>
+                        <span class="text-sm {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}">
+                            {{ 'مُفعّل' if provider.is_configured else 'غير مُعد' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="text-gray-400 text-sm mb-2">النماذج المتاحة:</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for model in provider.models %}
+                        <span class="px-3 py-1 bg-slate-700/50 text-gray-300 text-xs rounded-full">{{ model }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if not provider.is_configured %}
+                <div class="mt-4 p-3 bg-red-900/20 rounded-lg border border-red-500/30">
+                    <p class="text-red-400 text-sm">
+                        {% if provider.name == 'Groq' %}
+                        يرجى إضافة GROQ_API_KEY في متغيرات البيئة
+                        {% else %}
+                        يرجى إضافة HUGGINGFACE_API_KEY في متغيرات البيئة
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">طلبات اليوم</p>
+                        <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.get('total_today', 0) }}</p>
+                    </div>
+                    <div class="icon-container icon-gold">
+                        <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">ناجحة</p>
+                        <p class="text-3xl font-bold text-green-400 mt-1" id="stat-success">{{ stats.get('success_today', 0) }}</p>
+                    </div>
+                    <div class="icon-container bg-green-500/20">
+                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">فاشلة</p>
+                        <p class="text-3xl font-bold text-red-400 mt-1" id="stat-failed">{{ stats.get('failed_today', 0) }}</p>
+                    </div>
+                    <div class="icon-container bg-red-500/20">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stat-card p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">ذاكرة التخزين</p>
+                        <p class="text-3xl font-bold turquoise-text mt-1" id="stat-cache">{{ cache_stats.size }}</p>
+                        <p class="text-gray-500 text-xs mt-1">نسبة الإصابة: {{ cache_stats.hit_rate }}</p>
+                    </div>
+                    <div class="icon-container bg-cyan-500/20">
+                        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                    <span class="gold-text">الطلبات لكل ساعة</span>
+                    <span class="text-gray-400 text-sm font-normal">(آخر 24 ساعة)</span>
+                </h2>
+                <div class="h-64">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-white">
+                        <span class="gold-text">ذاكرة التخزين المؤقت</span>
+                    </h2>
+                    <button onclick="clearCache()" class="px-4 py-2 bg-red-600/80 hover:bg-red-600 text-white rounded-lg transition text-sm">
+                        مسح الذاكرة
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">العناصر المخزنة</p>
+                        <p class="text-2xl font-bold text-white">{{ cache_stats.size }} / {{ cache_stats.max_size }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">الإصابات</p>
+                        <p class="text-2xl font-bold text-green-400">{{ cache_stats.hits }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">الأخطاء</p>
+                        <p class="text-2xl font-bold text-amber-400">{{ cache_stats.misses }}</p>
+                    </div>
+                    <div class="bg-slate-800/50 p-4 rounded-lg">
+                        <p class="text-gray-400 text-sm">نسبة الإصابة</p>
+                        <p class="text-2xl font-bold turquoise-text">{{ cache_stats.hit_rate }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-4">
+                <span class="gold-text">معلومات المتغيرات البيئية المطلوبة</span>
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-800/50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-white mb-2">Groq (مطلوب)</h3>
+                    <code class="text-green-400 text-sm block mb-2">GROQ_API_KEY</code>
+                    <p class="text-gray-400 text-xs">للحصول على المفتاح: <a href="https://console.groq.com" target="_blank" class="text-cyan-400 hover:underline">console.groq.com</a></p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-white mb-2">HuggingFace (مطلوب)</h3>
+                    <code class="text-green-400 text-sm block mb-2">HUGGINGFACE_API_KEY</code>
+                    <p class="text-gray-400 text-xs">للحصول على المفتاح: <a href="https://huggingface.co/settings/tokens" target="_blank" class="text-cyan-400 hover:underline">huggingface.co/settings/tokens</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const hourlyData = {{ hourly_data | tojson | safe }};
+        
+        const ctx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: hourlyData.map(d => d.hour + ':00'),
+                datasets: [
+                    {
+                        label: 'ناجحة',
+                        data: hourlyData.map(d => d.success),
+                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'فاشلة',
+                        data: hourlyData.map(d => d.failed),
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(75, 85, 99, 0.3)' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { color: '#9ca3af' }
+                    }
+                }
+            }
+        });
+
+        function refreshStats() {
+            fetch('/admin/api/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-total').textContent = data.stats.total_today || 0;
+                    document.getElementById('stat-success').textContent = data.stats.success_today || 0;
+                    document.getElementById('stat-failed').textContent = data.stats.failed_today || 0;
+                    document.getElementById('stat-cache').textContent = data.cache_stats.size;
+                });
+        }
+
+        function clearCache() {
+            if (confirm('هل أنت متأكد من مسح ذاكرة التخزين المؤقت؟')) {
+                fetch('/admin/api/clear-cache', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            refreshStats();
+                        }
+                    });
+            }
+        }
+
+        setInterval(refreshStats, 30000);
+    </script>
+</body>
+</html>

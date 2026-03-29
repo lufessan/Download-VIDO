@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم الموحدة - ARKAN AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --gold-primary: #d4a853;
+            --gold-secondary: #c4943f;
+            --gold-dark: #8b7355;
+            --turquoise-primary: #40e0d0;
+            --turquoise-secondary: #2db3a5;
+            --dark-bg: #0a0f1a;
+            --dark-surface: #111827;
+            --dark-card: #1a2332;
+            --dark-hover: #243044;
+        }
+        
+        * {
+            font-family: 'Tajawal', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, #0f172a 50%, #0a1628 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(212, 168, 83, 0.15);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(212, 168, 83, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        
+        .stat-card-3d {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.98) 0%, rgba(17, 24, 39, 0.95) 100%);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            border-radius: 16px;
+            box-shadow: 
+                0 4px 6px rgba(0, 0, 0, 0.3),
+                0 10px 20px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 -2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        
+        .stat-card-3d:hover {
+            transform: translateY(-6px) rotateX(2deg);
+            box-shadow: 
+                0 8px 15px rgba(0, 0, 0, 0.4),
+                0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(212, 168, 83, 0.1);
+        }
+        
+        .provider-card {
+            background: linear-gradient(145deg, rgba(26, 35, 50, 0.95) 0%, rgba(17, 24, 39, 0.9) 100%);
+            border: 2px solid rgba(212, 168, 83, 0.2);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .provider-card.active {
+            border-color: rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.1);
+        }
+        
+        .provider-card.inactive {
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+        
+        .pharaonic-header {
+            background: linear-gradient(135deg, rgba(212, 168, 83, 0.08) 0%, transparent 50%, rgba(64, 224, 208, 0.08) 100%);
+            border-bottom: 2px solid;
+            border-image: linear-gradient(90deg, transparent, var(--gold-primary), var(--turquoise-primary), transparent) 1;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+        }
+        
+        .pharaonic-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' fill='%23d4a853' fill-opacity='0.03'/%3E%3C/svg%3E");
+        }
+        
+        .tab-btn {
+            background: rgba(26, 35, 50, 0.6);
+            border: 1px solid rgba(212, 168, 83, 0.1);
+            color: #9ca3af;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(212, 168, 83, 0.1);
+            color: #d4a853;
+        }
+        
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+            color: #0a0f1a;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(212, 168, 83, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .gold-text { color: var(--gold-primary); }
+        .turquoise-text { color: var(--turquoise-primary); }
+        
+        .icon-container {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .icon-gold {
+            background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+        }
+        
+        .icon-turquoise {
+            background: linear-gradient(135deg, var(--turquoise-primary) 0%, var(--turquoise-secondary) 100%);
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(17, 24, 39, 0.5);
+            border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(212, 168, 83, 0.3);
+            border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 168, 83, 0.5);
+        }
+        
+        .session-row {
+            border-bottom: 1px solid rgba(212, 168, 83, 0.1);
+            transition: background 0.2s;
+        }
+        
+        .session-row:hover {
+            background: rgba(212, 168, 83, 0.05);
+        }
+        
+        .activity-item {
+            border-right: 3px solid var(--gold-primary);
+            padding-right: 1rem;
+            margin-right: 0.5rem;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: #374151;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(-24px);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .latency-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
+            color: #0a0f1a;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212, 168, 83, 0.3);
+        }
+        
+        .btn-secondary {
+            background: rgba(51, 65, 85, 0.8);
+            border: 1px solid rgba(212, 168, 83, 0.2);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.8);
+            border-color: rgba(212, 168, 83, 0.4);
+        }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+        
+        .mini-chart {
+            height: 120px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6 pharaonic-pattern">
+    <div class="max-w-7xl mx-auto">
+        <header class="pharaonic-header flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                    <svg class="w-10 h-10 gold-text" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                    <span class="gold-text">ARKAN</span>
+                    <span>لوحة التحكم</span>
+                </h1>
+                <p class="text-gray-400 mt-1">إدارة شاملة للنظام والذكاء الاصطناعي</p>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap">
+                <div class="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></span>
+                    <span class="text-gray-400 text-sm">متصل</span>
+                </div>
+                <button onclick="refreshAllData()" class="btn-secondary flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    تحديث
+                </button>
+                <a href="/" class="btn-secondary flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                    </svg>
+                    الرئيسية
+                </a>
+                <a href="{{ url_for('admin_logout') }}" class="btn-danger flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    خروج
+                </a>
+            </div>
+        </header>
+
+        <nav class="flex flex-wrap gap-2 mb-8 p-2 bg-slate-900/50 rounded-2xl border border-slate-800">
+            <button class="tab-btn active" data-tab="dashboard">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                    </svg>
+                    لوحة المعلومات
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="providers">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                    </svg>
+                    مزودي AI
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="sessions">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    الجلسات
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="activity">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    سجل الأنشطة
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="tools">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    الأدوات
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="errors">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    الأخطاء
+                </span>
+            </button>
+            <button class="tab-btn" data-tab="settings">
+                <span class="flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                    الإعدادات
+                </span>
+            </button>
+        </nav>
+
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="stat-card-3d p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">طلبات اليوم</p>
+                            <p class="text-3xl font-bold text-white mt-1" id="stat-total">{{ stats.total_today }}</p>
+                            <p class="text-xs text-gray-500 mt-1">+<span id="stat-hourly-change">0</span> هذه الساعة</p>
+                        </div>
+                        <div class="icon-container icon-gold">
+                            <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-3d p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">ناجحة</p>
+                            <p class="text-3xl font-bold text-green-400 mt-1" id="stat-success">{{ stats.success_today }}</p>
+                            <p class="text-xs text-green-400/70 mt-1" id="stat-success-rate">{{ ((stats.success_today / stats.total_today * 100) if stats.total_today > 0 else 100)|round(1) }}%</p>
+                        </div>
+                        <div class="icon-container bg-green-500/20">
+                            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-3d p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">متصلين الآن</p>
+                            <p class="text-3xl font-bold turquoise-text mt-1" id="stat-active-now">{{ active_sessions.now }}</p>
+                            <p class="text-xs text-gray-500 mt-1"><span id="stat-active-hour">{{ active_sessions.hour }}</span> آخر ساعة</p>
+                        </div>
+                        <div class="icon-container icon-turquoise">
+                            <svg class="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card-3d p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">الأخطاء</p>
+                            <p class="text-3xl font-bold text-red-400 mt-1" id="stat-failed">{{ stats.failed_today }}</p>
+                            <p class="text-xs text-red-400/70 mt-1">آخر خطأ: <span id="last-error-time">-</span></p>
+                        </div>
+                        <div class="icon-container bg-red-500/20">
+                            <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <span class="gold-text">الطلبات لكل ساعة</span>
+                        <span class="text-gray-400 text-sm font-normal">(آخر 24 ساعة)</span>
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="hourlyChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">
+                        <span class="gold-text">توزيع الطلبات</span>
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="requestTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                        الأدوات الأكثر استخداماً
+                    </h3>
+                    <div class="space-y-3" id="top-tools-list">
+                        {% for tool in top_tools[:5] %}
+                        <div class="flex items-center justify-between">
+                            <span class="text-gray-300">{{ tool.name }}</span>
+                            <div class="flex items-center gap-2">
+                                <div class="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-amber-500 to-amber-600 rounded-full" style="width: {{ (tool.count / top_tools[0].count * 100) if (top_tools and top_tools[0].count > 0) else 0 }}%"></div>
+                                </div>
+                                <span class="text-gray-400 text-sm w-8">{{ tool.count }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        زمن الاستجابة
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">Groq LLM</span>
+                                <span class="text-green-400" id="latency-groq-llm">{{ latency.groq_llm }}ms</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-green-500 rounded-full transition-all" id="latency-bar-groq-llm" style="width: {{ (latency.groq_llm / 5000 * 100)|int }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">Groq Whisper</span>
+                                <span class="text-amber-400" id="latency-groq-whisper">{{ latency.groq_whisper }}ms</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-amber-500 rounded-full transition-all" id="latency-bar-groq-whisper" style="width: {{ (latency.groq_whisper / 5000 * 100)|int }}%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="text-gray-400">HuggingFace Vision</span>
+                                <span class="text-cyan-400" id="latency-hf-vision">{{ latency.hf_vision }}ms</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-cyan-500 rounded-full transition-all" id="latency-bar-hf-vision" style="width: {{ (latency.hf_vision / 5000 * 100)|int }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 gold-text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                        </svg>
+                        ذاكرة التخزين
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-white" id="cache-size">{{ cache_stats.size }}</p>
+                            <p class="text-gray-400 text-xs">عناصر مخزنة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-2xl font-bold turquoise-text" id="cache-hit-rate">{{ cache_stats.hit_rate }}</p>
+                            <p class="text-gray-400 text-xs">نسبة الإصابة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-green-400" id="cache-hits">{{ cache_stats.hits }}</p>
+                            <p class="text-gray-400 text-xs">إصابات</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-amber-400" id="cache-misses">{{ cache_stats.misses }}</p>
+                            <p class="text-gray-400 text-xs">أخطاء</p>
+                        </div>
+                    </div>
+                    <button onclick="clearCache()" class="w-full mt-4 btn-danger text-sm">مسح الذاكرة</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-providers" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                {% for provider in providers_info %}
+                <div class="provider-card p-6 {{ 'active' if provider.is_configured else 'inactive' }}">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-xl {{ 'bg-green-500/20' if provider.is_configured else 'bg-red-500/20' }} flex items-center justify-center">
+                                {% if provider.name == 'Groq' %}
+                                <svg class="w-8 h-8 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                                </svg>
+                                {% else %}
+                                <svg class="w-8 h-8 {{ 'text-green-400' if provider.is_configured else 'text-red-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white">{{ provider.name }}</h3>
+                                <p class="text-gray-400">{{ provider.type }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full {{ 'bg-green-400 pulse-dot' if provider.is_configured else 'bg-red-400' }}"></span>
+                                <span class="{{ 'text-green-400' if provider.is_configured else 'text-red-400' }} font-medium">
+                                    {{ 'مُفعّل' if provider.is_configured else 'غير مُعد' }}
+                                </span>
+                            </div>
+                            {% if provider.is_configured %}
+                            <div class="toggle-switch active" data-provider="{{ provider.name|lower }}"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 gap-3 mb-4">
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-xl font-bold text-white">{{ provider.stats.total }}</p>
+                            <p class="text-gray-400 text-xs">طلبات</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-xl font-bold text-green-400">{{ provider.stats.success }}</p>
+                            <p class="text-gray-400 text-xs">ناجحة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-xl font-bold text-red-400">{{ provider.stats.failed }}</p>
+                            <p class="text-gray-400 text-xs">فاشلة</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <p class="text-gray-400 text-sm mb-2">النماذج المتاحة:</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for model in provider.models %}
+                            <span class="px-3 py-1 bg-slate-700/50 text-gray-300 text-sm rounded-full border border-slate-600">{{ model }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% if not provider.is_configured %}
+                    <div class="p-4 bg-red-900/20 rounded-lg border border-red-500/30">
+                        <p class="text-red-400 text-sm flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            {% if provider.name == 'Groq' %}
+                            يرجى إضافة GROQ_API_KEY في متغيرات البيئة
+                            {% else %}
+                            يرجى إضافة HUGGINGFACE_API_KEY في متغيرات البيئة
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="glass-card p-6 mb-6">
+                <h3 class="text-xl font-bold text-white mb-4 gold-text">استخدام المزودين لكل ساعة (آخر 24 ساعة)</h3>
+                <div class="chart-container">
+                    <canvas id="providerHourlyChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        أداء Groq اليوم
+                    </h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-green-400">{{ provider_stats.groq.success }}</p>
+                            <p class="text-gray-400 text-xs">ناجحة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-red-400">{{ provider_stats.groq.failed }}</p>
+                            <p class="text-gray-400 text-xs">فاشلة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-amber-400">{{ provider_stats.groq.errors }}</p>
+                            <p class="text-gray-400 text-xs">أخطاء مسجلة</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        أداء HuggingFace اليوم
+                    </h3>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-green-400">{{ provider_stats.huggingface.success }}</p>
+                            <p class="text-gray-400 text-xs">ناجحة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-red-400">{{ provider_stats.huggingface.failed }}</p>
+                            <p class="text-gray-400 text-xs">فاشلة</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-lg text-center">
+                            <p class="text-2xl font-bold text-amber-400">{{ provider_stats.huggingface.errors }}</p>
+                            <p class="text-gray-400 text-xs">أخطاء مسجلة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-white mb-6 gold-text">الحصول على مفاتيح API</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-bold text-white">Groq</h4>
+                        </div>
+                        <code class="block text-green-400 text-sm mb-2 bg-slate-900/50 p-2 rounded">GROQ_API_KEY</code>
+                        <p class="text-gray-400 text-sm mb-3">يُستخدم لـ: نماذج اللغة (LLM) + تحويل الصوت (Whisper)</p>
+                        <a href="https://console.groq.com/keys" target="_blank" class="btn-primary inline-flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            الحصول على المفتاح
+                        </a>
+                    </div>
+                    <div class="bg-slate-800/50 p-5 rounded-xl border border-slate-700">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </div>
+                            <h4 class="text-lg font-bold text-white">HuggingFace</h4>
+                        </div>
+                        <code class="block text-green-400 text-sm mb-2 bg-slate-900/50 p-2 rounded">HUGGINGFACE_API_KEY</code>
+                        <p class="text-gray-400 text-sm mb-3">يُستخدم لـ: تحليل الصور والرؤية (Vision)</p>
+                        <a href="https://huggingface.co/settings/tokens" target="_blank" class="btn-primary inline-flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                            الحصول على المفتاح
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-sessions" class="tab-content">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="stat-card-3d p-5">
+                    <p class="text-gray-400 text-sm">متصلين الآن</p>
+                    <p class="text-3xl font-bold turquoise-text" id="sessions-active-now">{{ active_sessions.now }}</p>
+                </div>
+                <div class="stat-card-3d p-5">
+                    <p class="text-gray-400 text-sm">آخر ساعة</p>
+                    <p class="text-3xl font-bold text-white" id="sessions-active-hour">{{ active_sessions.hour }}</p>
+                </div>
+                <div class="stat-card-3d p-5">
+                    <p class="text-gray-400 text-sm">إجمالي الجلسات</p>
+                    <p class="text-3xl font-bold gold-text" id="sessions-total">{{ active_sessions.total }}</p>
+                </div>
+                <div class="stat-card-3d p-5">
+                    <p class="text-gray-400 text-sm">مشاهدات الصفحات</p>
+                    <p class="text-3xl font-bold text-purple-400" id="sessions-page-views">{{ page_views_today }}</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">توزيع الأجهزة</h3>
+                    <div class="mini-chart">
+                        <canvas id="deviceChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">المتصفحات</h3>
+                    <div class="mini-chart">
+                        <canvas id="browserChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-white mb-4">أنظمة التشغيل</h3>
+                    <div class="mini-chart">
+                        <canvas id="osChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="glass-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold text-white gold-text">الجلسات النشطة</h3>
+                    <button onclick="refreshSessions()" class="btn-secondary text-sm">تحديث</button>
+                </div>
+                <div class="overflow-x-auto scrollbar-thin">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-slate-700">
+                                <th class="text-right py-3 px-4">الجلسة</th>
+                                <th class="text-right py-3 px-4">IP</th>
+                                <th class="text-right py-3 px-4">الجهاز</th>
+                                <th class="text-right py-3 px-4">المتصفح</th>
+                                <th class="text-right py-3 px-4">النظام</th>
+                                <th class="text-right py-3 px-4">الصفحات</th>
+                                <th class="text-right py-3 px-4">آخر نشاط</th>
+                                <th class="text-right py-3 px-4">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessions-table-body">
+                            {% for session in sessions %}
+                            <tr class="session-row">
+                                <td class="py-3 px-4 text-gray-300 font-mono text-xs">{{ session.session_id[:8] }}...</td>
+                                <td class="py-3 px-4 text-gray-300">{{ session.ip_address }}</td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 bg-slate-700/50 rounded text-xs text-gray-300">{{ session.device_type }}</span>
+                                </td>
+                                <td class="py-3 px-4 text-gray-300">{{ session.browser }}</td>
+                                <td class="py-3 px-4 text-gray-300">{{ session.os_name }}</td>
+                                <td class="py-3 px-4 text-gray-300">{{ session.page_views }}</td>
+                                <td class="py-3 px-4 text-gray-400 text-xs">{{ session.last_seen.strftime('%H:%M:%S') if session.last_seen else '-' }}</td>
+                                <td class="py-3 px-4">
+                                    {% if session.is_active %}
+                                    <span class="inline-flex items-center gap-1 text-green-400 text-xs">
+                                        <span class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></span>
+                                        نشط
+                                    </span>
+                                    {% else %}
+                                    <span class="text-gray-500 text-xs">غير نشط</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-activity" class="tab-content">
+            <div class="glass-card p-6 mb-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <h3 class="text-xl font-bold text-white gold-text">سجل الأنشطة</h3>
+                    <div class="flex items-center gap-3">
+                        <select id="activity-filter-tool" class="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm">
+                            <option value="">كل الأدوات</option>
+                            {% for tool_name in tool_names %}
+                            <option value="{{ tool_name }}">{{ tool_name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select id="activity-filter-status" class="bg-slate-800 border border-slate-600 text-white rounded-lg px-3 py-2 text-sm">
+                            <option value="">كل الحالات</option>
+                            <option value="success">ناجحة</option>
+                            <option value="error">فاشلة</option>
+                        </select>
+                        <button onclick="refreshActivity()" class="btn-secondary text-sm">تحديث</button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 max-h-96 overflow-y-auto scrollbar-thin" id="activity-list">
+                    {% for activity in activities %}
+                    <div class="activity-item py-3 {{ 'border-r-green-500' if activity.status == 'success' else 'border-r-red-500' }}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full {{ 'bg-green-400' if activity.status == 'success' else 'bg-red-400' }}"></span>
+                                <span class="text-white font-medium">{{ activity.tool_name }}</span>
+                                <span class="text-gray-400 text-sm">{{ activity.action }}</span>
+                            </div>
+                            <div class="flex items-center gap-4 text-sm">
+                                <span class="text-gray-400">{{ activity.duration_ms }}ms</span>
+                                <span class="text-gray-500">{{ activity.timestamp.strftime('%H:%M:%S') }}</span>
+                            </div>
+                        </div>
+                        {% if activity.error_message %}
+                        <p class="text-red-400 text-sm mt-2 mr-5">{{ activity.error_message }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-tools" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                {% for tool in tool_stats %}
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">{{ tool.name }}</h3>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-xl font-bold text-white">{{ tool.usage_count }}</p>
+                            <p class="text-gray-400 text-xs">استخدام</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-3 rounded-lg text-center">
+                            <p class="text-xl font-bold text-green-400">{{ ((tool.success_count / tool.usage_count * 100) if tool.usage_count > 0 else 0)|round(1) }}%</p>
+                            <p class="text-gray-400 text-xs">نجاح</p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-gray-400 text-xs mb-1">متوسط الوقت: <span class="text-white">{{ tool.avg_duration_ms|round(0) }}ms</span></p>
+                        <div class="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500 rounded-full" style="width: {{ ((tool.success_count / tool.usage_count * 100) if tool.usage_count > 0 else 0)|int }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="tab-errors" class="tab-content">
+            <div class="glass-card p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white gold-text">سجل الأخطاء</h3>
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-400 text-sm">إجمالي: <span class="text-red-400 font-bold" id="errors-total">{{ errors|length }}</span></span>
+                        <button onclick="refreshErrors()" class="btn-secondary text-sm">تحديث</button>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 max-h-96 overflow-y-auto scrollbar-thin" id="errors-list">
+                    {% for error in errors %}
+                    <div class="bg-red-900/10 border border-red-500/30 rounded-xl p-4">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded">{{ error.error_type }}</span>
+                                {% if error.provider %}
+                                <span class="px-2 py-1 bg-slate-700/50 text-gray-300 text-xs rounded">{{ error.provider }}</span>
+                                {% endif %}
+                                {% if error.tool_name %}
+                                <span class="px-2 py-1 bg-amber-500/20 text-amber-400 text-xs rounded">{{ error.tool_name }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="text-gray-500 text-xs">{{ error.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </div>
+                        <p class="text-red-300 text-sm">{{ error.error_message[:200] }}{{ '...' if error.error_message|length > 200 else '' }}</p>
+                        {% if error.resolved %}
+                        <div class="mt-2 flex items-center gap-2 text-green-400 text-xs">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            تم الحل
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if not errors %}
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-gray-400">لا توجد أخطاء مسجلة</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-6 gold-text">إعدادات الذكاء الاصطناعي</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-gray-400 mb-2">حد الطلبات لكل جلسة</label>
+                            <div class="flex items-center gap-3">
+                                <input type="number" id="setting-rate-limit" value="{{ settings.rate_limit }}" 
+                                       class="bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2 w-24">
+                                <span class="text-gray-400">طلب / 20 دقيقة</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-400 mb-2">الحد الأقصى لمدة الصوت</label>
+                            <div class="flex items-center gap-3">
+                                <input type="number" id="setting-max-audio" value="{{ settings.max_audio_minutes }}" 
+                                       class="bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2 w-24">
+                                <span class="text-gray-400">دقيقة</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-400 mb-2">فترة صلاحية التخزين المؤقت</label>
+                            <div class="flex items-center gap-3">
+                                <input type="number" id="setting-cache-ttl" value="{{ settings.cache_ttl }}" 
+                                       class="bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2 w-24">
+                                <span class="text-gray-400">ثانية</span>
+                            </div>
+                        </div>
+                        
+                        <button onclick="saveSettings()" class="btn-primary w-full">حفظ الإعدادات</button>
+                    </div>
+                </div>
+                
+                <div class="glass-card p-6">
+                    <h3 class="text-xl font-bold text-white mb-6 gold-text">إدارة المسؤولين</h3>
+                    
+                    <div class="space-y-4 mb-6">
+                        {% for admin in admins %}
+                        <div class="flex items-center justify-between bg-slate-800/50 p-4 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                    <span class="text-amber-400 font-bold">{{ admin.username[0]|upper }}</span>
+                                </div>
+                                <div>
+                                    <p class="text-white font-medium">{{ admin.username }}</p>
+                                    <p class="text-gray-400 text-xs">آخر دخول: {{ admin.last_login.strftime('%Y-%m-%d %H:%M') if admin.last_login else 'لم يسجل بعد' }}</p>
+                                </div>
+                            </div>
+                            {% if admin.username != current_user.username %}
+                            <button onclick="deleteAdmin('{{ admin.id }}')" class="text-red-400 hover:text-red-300 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="border-t border-slate-700 pt-6">
+                        <h4 class="text-white font-medium mb-4">إضافة مسؤول جديد</h4>
+                        <div class="space-y-3">
+                            <input type="text" id="new-admin-username" placeholder="اسم المستخدم" 
+                                   class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2">
+                            <input type="password" id="new-admin-password" placeholder="كلمة المرور" 
+                                   class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2">
+                            <button onclick="addAdmin()" class="btn-primary w-full">إضافة مسؤول</button>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t border-slate-700 pt-6 mt-6">
+                        <h4 class="text-white font-medium mb-4">تغيير كلمة المرور</h4>
+                        <div class="space-y-3">
+                            <input type="password" id="current-password" placeholder="كلمة المرور الحالية" 
+                                   class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2">
+                            <input type="password" id="new-password" placeholder="كلمة المرور الجديدة" 
+                                   class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2">
+                            <input type="password" id="confirm-password" placeholder="تأكيد كلمة المرور" 
+                                   class="w-full bg-slate-800 border border-slate-600 text-white rounded-lg px-4 py-2">
+                            <button onclick="changePassword()" class="btn-secondary w-full">تغيير كلمة المرور</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.dataset.tab;
+                
+                tabButtons.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById('tab-' + tabId).classList.add('active');
+            });
+        });
+        
+        const hourlyData = {{ hourly_data | tojson | safe }};
+        const requestTypeData = {{ request_type_data | tojson | safe }};
+        const deviceData = {{ device_data | tojson | safe }};
+        const browserData = {{ browser_data | tojson | safe }};
+        const osData = {{ os_data | tojson | safe }};
+        const groqHourlyData = {{ groq_hourly_data | tojson | safe }};
+        
+        const chartColors = {
+            gold: '#d4a853',
+            turquoise: '#40e0d0',
+            green: '#22c55e',
+            red: '#ef4444',
+            amber: '#f59e0b',
+            purple: '#a855f7',
+            cyan: '#06b6d4',
+            pink: '#ec4899'
+        };
+        
+        new Chart(document.getElementById('hourlyChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: hourlyData.map(d => d.hour + ':00'),
+                datasets: [
+                    {
+                        label: 'ناجحة',
+                        data: hourlyData.map(d => d.success),
+                        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                        borderColor: 'rgba(34, 197, 94, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'فاشلة',
+                        data: hourlyData.map(d => d.failed),
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { stacked: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(75, 85, 99, 0.3)' } },
+                    y: { stacked: true, beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(75, 85, 99, 0.3)' } }
+                },
+                plugins: { legend: { labels: { color: '#9ca3af' } } }
+            }
+        });
+        
+        new Chart(document.getElementById('requestTypeChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(requestTypeData),
+                datasets: [{
+                    data: Object.values(requestTypeData),
+                    backgroundColor: [chartColors.gold, chartColors.turquoise, chartColors.green, chartColors.amber, chartColors.purple],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#9ca3af', padding: 20 } }
+                }
+            }
+        });
+        
+        new Chart(document.getElementById('deviceChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(deviceData),
+                datasets: [{
+                    data: Object.values(deviceData),
+                    backgroundColor: [chartColors.gold, chartColors.turquoise, chartColors.purple],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }
+            }
+        });
+        
+        new Chart(document.getElementById('browserChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(browserData),
+                datasets: [{
+                    data: Object.values(browserData),
+                    backgroundColor: [chartColors.amber, chartColors.cyan, chartColors.pink, chartColors.green, chartColors.purple],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }
+            }
+        });
+        
+        new Chart(document.getElementById('osChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(osData),
+                datasets: [{
+                    data: Object.values(osData),
+                    backgroundColor: [chartColors.turquoise, chartColors.gold, chartColors.red, chartColors.purple, chartColors.cyan],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }
+            }
+        });
+        
+        new Chart(document.getElementById('providerHourlyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: groqHourlyData.map(d => d.hour + ':00'),
+                datasets: [
+                    {
+                        label: 'Groq',
+                        data: groqHourlyData.map(d => d.groq),
+                        borderColor: chartColors.amber,
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'HuggingFace',
+                        data: groqHourlyData.map(d => d.huggingface),
+                        borderColor: chartColors.cyan,
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(75, 85, 99, 0.3)' } },
+                    y: { beginAtZero: true, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(75, 85, 99, 0.3)' } }
+                },
+                plugins: { legend: { labels: { color: '#9ca3af' } } }
+            }
+        });
+        
+        function refreshAllData() {
+            fetch('/admin/api/dashboard-stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-total').textContent = data.stats.total_today || 0;
+                    document.getElementById('stat-success').textContent = data.stats.success_today || 0;
+                    document.getElementById('stat-failed').textContent = data.stats.failed_today || 0;
+                    document.getElementById('stat-active-now').textContent = data.active_sessions.now || 0;
+                    document.getElementById('stat-active-hour').textContent = data.active_sessions.hour || 0;
+                    document.getElementById('cache-size').textContent = data.cache_stats.size;
+                    document.getElementById('cache-hit-rate').textContent = data.cache_stats.hit_rate;
+                    document.getElementById('cache-hits').textContent = data.cache_stats.hits;
+                    document.getElementById('cache-misses').textContent = data.cache_stats.misses;
+                })
+                .catch(err => console.error('Error refreshing data:', err));
+        }
+        
+        function refreshSessions() {
+            fetch('/admin/api/sessions')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('sessions-active-now').textContent = data.active_now;
+                    document.getElementById('sessions-active-hour').textContent = data.active_hour;
+                    document.getElementById('sessions-total').textContent = data.total_sessions;
+                })
+                .catch(err => console.error('Error:', err));
+        }
+        
+        function refreshActivity() {
+            const tool = document.getElementById('activity-filter-tool').value;
+            const status = document.getElementById('activity-filter-status').value;
+            fetch(`/admin/api/activities?tool=${tool}&status=${status}`)
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Activities refreshed');
+                })
+                .catch(err => console.error('Error:', err));
+        }
+        
+        function refreshErrors() {
+            fetch('/admin/api/errors')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('errors-total').textContent = data.total;
+                })
+                .catch(err => console.error('Error:', err));
+        }
+        
+        function clearCache() {
+            if (confirm('هل أنت متأكد من مسح ذاكرة التخزين المؤقت؟')) {
+                fetch('/admin/api/clear-cache', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            refreshAllData();
+                        }
+                    })
+                    .catch(err => console.error('Error:', err));
+            }
+        }
+        
+        function saveSettings() {
+            const settings = {
+                rate_limit: document.getElementById('setting-rate-limit').value,
+                max_audio_minutes: document.getElementById('setting-max-audio').value,
+                cache_ttl: document.getElementById('setting-cache-ttl').value
+            };
+            fetch('/admin/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم حفظ الإعدادات بنجاح');
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        }
+        
+        function addAdmin() {
+            const username = document.getElementById('new-admin-username').value;
+            const password = document.getElementById('new-admin-password').value;
+            if (!username || !password) {
+                alert('يرجى ملء جميع الحقول');
+                return;
+            }
+            fetch('/admin/api/admins', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم إضافة المسؤول بنجاح');
+                    location.reload();
+                } else {
+                    alert(data.error || 'حدث خطأ');
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        }
+        
+        function deleteAdmin(adminId) {
+            if (confirm('هل أنت متأكد من حذف هذا المسؤول؟')) {
+                fetch(`/admin/api/admins/${adminId}`, { method: 'DELETE' })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        }
+                    })
+                    .catch(err => console.error('Error:', err));
+            }
+        }
+        
+        function changePassword() {
+            const current = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirm = document.getElementById('confirm-password').value;
+            
+            if (!current || !newPass || !confirm) {
+                alert('يرجى ملء جميع الحقول');
+                return;
+            }
+            if (newPass !== confirm) {
+                alert('كلمة المرور الجديدة غير متطابقة');
+                return;
+            }
+            
+            fetch('/admin/api/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: current, new_password: newPass })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('تم تغيير كلمة المرور بنجاح');
+                    document.getElementById('current-password').value = '';
+                    document.getElementById('new-password').value = '';
+                    document.getElementById('confirm-password').value = '';
+                } else {
+                    alert(data.error || 'حدث خطأ');
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        }
+        
+        setInterval(refreshAllData, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - ARKAN AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #d4a853 0%, #c4943f 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(212, 168, 83, 0.3);
+        }
+        input:focus {
+            outline: none;
+            border-color: #d4a853;
+            box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.2);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="glass-card p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-white mb-2">لوحة التحكم</h1>
+            <p class="text-gray-400">تسجيل الدخول للمسؤول</p>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-4 p-4 rounded-lg {% if category == 'error' %}bg-red-500/20 text-red-400{% else %}bg-green-500/20 text-green-400{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" class="space-y-6">
+            <div>
+                <label class="block text-gray-300 mb-2">اسم المستخدم</label>
+                <input type="text" name="username" required
+                       class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-500"
+                       placeholder="أدخل اسم المستخدم">
+            </div>
+            
+            <div>
+                <label class="block text-gray-300 mb-2">كلمة المرور</label>
+                <input type="password" name="password" required
+                       class="w-full px-4 py-3 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-500"
+                       placeholder="أدخل كلمة المرور">
+            </div>
+            
+            <button type="submit" class="btn-primary w-full py-3 rounded-lg text-slate-900 font-semibold">
+                تسجيل الدخول
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <a href="/" class="text-gray-400 hover:text-white transition">العودة للصفحة الرئيسية</a>
+        </div>
+    </div>
+</body>
+</html>
