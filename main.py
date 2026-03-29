@@ -35,26 +35,48 @@ logger = logging.getLogger(__name__)
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 COOKIES_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cookies.txt')
 cookie_content = os.environ.get('COOKIE_CONTENT')
+YOUTUBE_COOKIE_DOMAINS = [
+    '.youtube.com', 'youtube.com', 'www.youtube.com',
+    '.google.com', 'google.com', 'www.google.com',
+    'accounts.google.com', '.google.co', 'consent.youtube.com',
+]
+
 if cookie_content:
     try:
         cookie_content = cookie_content.replace('\\n', '\n').replace('\\t', '\t')
         cookie_content = cookie_content.replace('\r\n', '\n').replace('\r', '\n')
-        if not cookie_content.strip().startswith('# Netscape') and not cookie_content.strip().startswith('#'):
-            cookie_content = '# Netscape HTTP Cookie File\n' + cookie_content
+        all_lines = cookie_content.strip().splitlines()
+        comment_lines = [l for l in all_lines if l.startswith('#') or not l.strip()]
+        data_lines = [l for l in all_lines if l.strip() and not l.startswith('#')]
+        filtered_lines = []
+        for line in data_lines:
+            domain = line.split('\t')[0].strip().lower() if '\t' in line else line.split()[0].strip().lower()
+            if any(domain == d or domain.endswith(d) for d in YOUTUBE_COOKIE_DOMAINS):
+                filtered_lines.append(line)
+        filtered_content = '# Netscape HTTP Cookie File\n# Filtered for YouTube/Google only\n'
+        filtered_content += '\n'.join(filtered_lines) + '\n'
         with open(COOKIES_FILE_PATH, 'w', encoding='utf-8', newline='\n') as f:
-            f.write(cookie_content.strip() + '\n')
-        lines = [l for l in cookie_content.strip().splitlines() if l and not l.startswith('#')]
+            f.write(filtered_content)
         logging.info(f"[Cookies] File created at: {COOKIES_FILE_PATH}")
-        logging.info(f"[Cookies] {len(lines)} cookie entries, working dir: {os.getcwd()}")
+        logging.info(f"[Cookies] Original: {len(data_lines)} entries, Filtered (YouTube/Google only): {len(filtered_lines)} entries")
+        logging.info(f"[Cookies] Working dir: {os.getcwd()}")
         if os.path.exists(COOKIES_FILE_PATH):
             fsize = os.path.getsize(COOKIES_FILE_PATH)
-            logging.info(f"[Cookies] Verified on disk: {fsize} bytes")
-            with open(COOKIES_FILE_PATH, 'r') as f:
-                first_lines = f.readlines()[:3]
-                for i, line in enumerate(first_lines):
-                    logging.info(f"[Cookies] Line {i+1}: {line.strip()[:80]}")
-            youtube_lines = [l for l in cookie_content.strip().splitlines() if '.youtube.com' in l or '.google.com' in l]
-            logging.info(f"[Cookies] YouTube/Google cookie lines: {len(youtube_lines)}")
+            logging.info(f"[Cookies] File size on disk: {fsize} bytes")
+            key_cookies = {}
+            for line in filtered_lines:
+                parts = line.split('\t')
+                if len(parts) >= 7:
+                    cookie_name = parts[5].strip()
+                    cookie_domain = parts[0].strip()
+                    key_cookies[cookie_name] = cookie_domain
+            critical_names = ['LOGIN_INFO', 'SID', 'HSID', 'SSID', 'APISID', 'SAPISID',
+                            '__Secure-1PSID', '__Secure-3PSID', '__Secure-1PAPISID', '__Secure-3PAPISID']
+            for name in critical_names:
+                if name in key_cookies:
+                    logging.info(f"[Cookies] ✅ Found {name} ({key_cookies[name]})")
+                else:
+                    logging.warning(f"[Cookies] ❌ Missing {name}")
         else:
             logging.error("[Cookies] File was written but NOT found on disk!")
     except Exception as e:
@@ -163,10 +185,10 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
     
     # Try multiple format strategies to handle various YouTube restrictions
     format_strategies = [
+        "bestaudio*/bestaudio/best*",
         "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio",
-        "bestaudio/best",
-        "best[ext=m4a]/best[ext=webm]/best",
-        "worst[ext=m4a]/worst",
+        "best*",
+        "worst",
     ]
     
     for format_str in format_strategies:
@@ -1279,10 +1301,10 @@ def video_info():
             'socket_timeout': 1800,
             'retries': 3,
             'age_limit': 99,
+            'format': 'bestvideo*+bestaudio*/best*',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                    'skip': ['hls', 'dash'],
                 }
             },
             'http_headers': {
@@ -1362,10 +1384,10 @@ def get_video_formats():
             'socket_timeout': 1800,
             'retries': 3,
             'age_limit': 99,
+            'format': 'bestvideo*+bestaudio*/best*',
             'extractor_args': {
                 'youtube': {
                     'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                    'skip': ['hls', 'dash'],
                 }
             },
             'http_headers': {
@@ -3019,8 +3041,8 @@ def estimate_size():
             return jsonify({'error': 'الرجاء إدخال رابط'}), 400
 
         has_cookies_est = os.path.exists(COOKIES_FILE_PATH)
-        # Never skip HLS/DASH — age-restricted videos are ONLY available via HLS/DASH
         ydl_opts = {
+            'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
@@ -3179,7 +3201,6 @@ def download_playlist():
         age_bypass_args = {
             'youtube': {
                 'player_client': ['tv_embedded', 'web_creator', 'ios', 'android', 'web'],
-                'skip': ['hls', 'dash'],
             }
         }
         common_headers = {
@@ -3188,7 +3209,7 @@ def download_playlist():
 
         if download_format == 'audio':
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]/bestaudio/best',
+                'format': 'bestaudio*/bestaudio/best*',
                 'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
                 'noplaylist': False,
                 'quiet': True,
@@ -3206,7 +3227,7 @@ def download_playlist():
             }
         else:
             ydl_opts = {
-                'format': 'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
+                'format': 'bestvideo*+bestaudio*/best*',
                 'merge_output_format': 'mp4',
                 'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
                 'noplaylist': False,
@@ -3339,6 +3360,7 @@ def download_video():
         age_bypass_extractor_args_no_cookies = age_bypass_extractor_args
 
         info_opts = {
+            'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
             'socket_timeout': 1800,
@@ -3424,7 +3446,7 @@ def download_video():
         else:
             if is_tiktok or is_instagram or is_twitter:
                 ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio/bestvideo+bestaudio/best[ext=mp4]/best',
+                    'format': 'bestvideo*+bestaudio*/best*',
                     'merge_output_format': 'mp4',
                     'outtmpl': output_template + '.%(ext)s',
                     'noplaylist': True,
@@ -3455,12 +3477,7 @@ def download_video():
             else:
                 # YouTube and other sites — wildcard format chain that always succeeds
                 ydl_opts = {
-                    'format': (
-                        'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
-                        'bestvideo[ext=mp4]+bestaudio/'
-                        'bestvideo*+bestaudio*/'
-                        'best*'
-                    ),
+                    'format': 'bestvideo*+bestaudio*/best*',
                     'merge_output_format': 'mp4',
                     'outtmpl': output_template + '.%(ext)s',
                     'noplaylist': True,
@@ -4883,6 +4900,7 @@ def get_video_info():
         logging.info(f"Fetching video info for: {url}")
         
         ydl_opts = {
+            'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
