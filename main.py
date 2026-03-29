@@ -736,8 +736,65 @@ def generate_podcast_search_links(podcast_name):
     }
 
 
+def identify_anime_with_vision_llm(image_path: str) -> str | None:
+    """
+    Use HuggingFace Qwen3-VL vision LLM to identify anime from any image.
+    Works with screenshots, fan art, promotional images, and character art.
+    Requires HUGGINGFACE_API_KEY.
+    """
+    hf_key = os.environ.get('HUGGINGFACE_API_KEY', '').strip()
+    if not hf_key:
+        logging.info('[VisionLLM] No HUGGINGFACE_API_KEY configured. Skipping.')
+        return None
+
+    try:
+        from huggingface_hub import InferenceClient
+        from PIL import Image as PILImage
+        import base64, io as _io
+
+        # Resize for faster inference
+        img = PILImage.open(image_path).convert('RGB')
+        img.thumbnail((512, 512))
+        buf = _io.BytesIO()
+        img.save(buf, format='JPEG', quality=85)
+        img_b64 = base64.b64encode(buf.getvalue()).decode()
+
+        client = InferenceClient(token=hf_key)
+
+        resp = client.chat_completion(
+            model='Qwen/Qwen3-VL-8B-Instruct',
+            messages=[{
+                'role': 'user',
+                'content': [
+                    {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{img_b64}'}},
+                    {'type': 'text', 'text': (
+                        'You are an anime expert. Look at this image and identify which anime series, movie, or OVA it is from.\n'
+                        'If you recognize it, reply ONLY with the anime name (English or Romaji), nothing else.\n'
+                        'If you cannot identify it, reply UNKNOWN.'
+                    )}
+                ]
+            }],
+            max_tokens=60
+        )
+
+        answer = resp.choices[0].message.content.strip().strip('"').strip("'")
+        logging.info(f'[VisionLLM] Qwen3-VL identified: {answer!r}')
+
+        if not answer or answer.upper() == 'UNKNOWN' or len(answer) < 2:
+            return None
+        # Remove common noise phrases
+        for noise in ['I cannot', 'I don', 'cannot identify', 'not sure', 'unknown', 'Sorry']:
+            if noise.lower() in answer.lower():
+                return None
+        return answer
+
+    except Exception as e:
+        logging.warning(f'[VisionLLM] Error: {type(e).__name__}: {str(e)[:200]}')
+        return None
+
+
 def identify_anime_with_gemini(image_path):
-    """Use Gemini AI Vision to identify anime from image"""
+    """Use Gemini AI Vision to identify anime from image (legacy, may be unavailable)"""
     prompt = """Analyze this anime screenshot or image carefully.
     Identify the anime title based on the characters, art style, scene, character designs, backgrounds, or any recognizable elements.
     
@@ -1672,7 +1729,13 @@ def search_anime():
 
         from urllib.parse import quote
 
-        gemini_result = identify_anime_with_gemini(temp_path)
+        # Priority 1: Qwen3-VL Vision LLM (works with any image type)
+        vision_result = identify_anime_with_vision_llm(temp_path)
+        if not vision_result:
+            # Priority 2: Gemini Vision (legacy fallback)
+            vision_result = identify_anime_with_gemini(temp_path)
+
+        gemini_result = vision_result
         if gemini_result:
             safe_remove_file(temp_path)
 

@@ -255,7 +255,9 @@ class HuggingFaceProvider(AIProvider):
     - Image classification
     """
     
-    BASE_URL = "https://api-inference.huggingface.co/models"
+    # HF migrated to router.huggingface.co in 2025
+    BASE_URL = "https://router.huggingface.co/hf-inference/models"
+    LEGACY_BASE_URL = "https://api-inference.huggingface.co/models"
     DEFAULT_VISION_MODEL = "Salesforce/blip-image-captioning-large"
     DEFAULT_VQA_MODEL = "dandelin/vilt-b32-finetuned-vqa"
     
