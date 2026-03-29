@@ -29,38 +29,34 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from models import db, AdminUser, AIProviderState, AIUsageLog, DailyStats, ActiveSession, ActivityLog, ToolStats, HourlyStats, ErrorLog
 from services.ai_providers import ai_manager, AIProviderError, RateLimitError, ProviderNotConfiguredError
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 cookie_content = os.environ.get('COOKIE_CONTENT')
 if cookie_content:
     try:
-        # Fix escaped newlines that happen when pasting multi-line content into env vars
-        # Handles: \n → actual newline, \\n → actual newline, \t → actual tab
         cookie_content = cookie_content.replace('\\n', '\n').replace('\\t', '\t')
-        # Remove any carriage returns (Windows line endings)
         cookie_content = cookie_content.replace('\r\n', '\n').replace('\r', '\n')
-        # Ensure the file starts with the Netscape header if not already present
         if not cookie_content.strip().startswith('# Netscape') and not cookie_content.strip().startswith('#'):
             cookie_content = '# Netscape HTTP Cookie File\n' + cookie_content
         with open('cookies.txt', 'w', encoding='utf-8', newline='\n') as f:
             f.write(cookie_content.strip() + '\n')
         lines = [l for l in cookie_content.strip().splitlines() if l and not l.startswith('#')]
-        print(f"✅ Cookies file created successfully ({len(lines)} cookie entries).")
+        logging.info(f"[Cookies] File created successfully ({len(lines)} cookie entries).")
         if os.path.exists('cookies.txt'):
             fsize = os.path.getsize('cookies.txt')
-            print(f"✅ cookies.txt verified on disk: {fsize} bytes, {len(lines)} data lines")
+            logging.info(f"[Cookies] Verified on disk: {fsize} bytes, {len(lines)} data lines")
         else:
-            print("❌ ERROR: cookies.txt was written but NOT found on disk!")
+            logging.error("[Cookies] File was written but NOT found on disk!")
     except Exception as e:
-        print(f"⚠️ Warning: Failed to write cookies file: {e}")
+        logging.error(f"[Cookies] Failed to write cookies file: {e}")
 else:
-    print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
+    logging.warning("[Cookies] COOKIE_CONTENT not found in environment variables.")
     if os.path.exists('cookies.txt'):
         fsize = os.path.getsize('cookies.txt')
-        print(f"ℹ️ However, cookies.txt already exists on disk: {fsize} bytes")
+        logging.info(f"[Cookies] However, cookies.txt already exists on disk: {fsize} bytes")
 # -------------------------------------------------------
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 # =============================================================================
 # MEMORY OPTIMIZATION: Centralized cleanup utilities
