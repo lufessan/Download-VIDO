@@ -368,8 +368,8 @@ UPLOAD_FOLDER = tempfile.gettempdir()
 ALLOWED_IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 ALLOWED_AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma'}
 
-ANIME_SIMILARITY_THRESHOLD = 0.85
-PODCAST_NAME_SIMILARITY_THRESHOLD = 90
+ANIME_SIMILARITY_THRESHOLD = 0.60
+PODCAST_NAME_SIMILARITY_THRESHOLD = 45
 
 # =============================================================================
 # ACTIVITY LOGGING HELPER
@@ -792,6 +792,38 @@ def identify_anime_by_description(description):
     if result and result.upper() != 'UNKNOWN' and len(result) > 2:
         return result.strip()
     return None
+
+
+def get_anime_details_from_jikan(anime_name: str) -> dict:
+    """Fetch anime details from Jikan API (MyAnimeList wrapper) - free, no key needed."""
+    try:
+        from urllib.parse import quote
+        resp = requests.get(
+            f'https://api.jikan.moe/v4/anime?q={quote(anime_name)}&limit=1&sfw=false',
+            timeout=10
+        )
+        if resp.status_code == 200:
+            data = resp.json().get('data', [])
+            if data:
+                a = data[0]
+                return {
+                    'mal_id': a.get('mal_id'),
+                    'title_en': a.get('title_english') or a.get('title') or anime_name,
+                    'title_jp': a.get('title_japanese', ''),
+                    'image': a.get('images', {}).get('jpg', {}).get('large_image_url') or
+                             a.get('images', {}).get('jpg', {}).get('image_url', ''),
+                    'score': a.get('score'),
+                    'episodes': a.get('episodes'),
+                    'status': a.get('status', ''),
+                    'genres': [g.get('name', '') for g in a.get('genres', [])[:3]],
+                    'synopsis': (a.get('synopsis') or '')[:300],
+                    'url': a.get('url', ''),
+                    'year': a.get('year'),
+                    'type': a.get('type', ''),
+                }
+    except Exception as e:
+        logging.warning(f'[Jikan] Failed to fetch details for {anime_name}: {e}')
+    return {}
 
 
 def allowed_audio(filename):
@@ -1455,18 +1487,26 @@ def search_anime():
             log_activity('anime_detection_image', 'search', 'success', duration_ms=duration_ms, 
                         file_size=file_size, details=json.dumps({'method': 'gemini_ai', 'anime': anime_name}))
 
+            jikan = get_anime_details_from_jikan(anime_name)
             return jsonify({
                 'found': True,
-                'anime_name': anime_name,
+                'anime_name': jikan.get('title_en') or anime_name,
+                'anime_name_jp': jikan.get('title_jp', ''),
                 'episode': episode_info,
                 'similarity': 'AI',
                 'timestamp': '',
                 'video_preview': '',
-                'image_preview': '',
+                'image_preview': jikan.get('image', ''),
                 'detection_method': 'gemini_ai',
-                'description': description,
+                'description': jikan.get('synopsis') or description,
+                'score': jikan.get('score'),
+                'episodes': jikan.get('episodes'),
+                'genres': jikan.get('genres', []),
+                'type': jikan.get('type', ''),
+                'year': jikan.get('year'),
+                'mal_url': jikan.get('url', ''),
                 'search_links': search_links,
-                'search_link': search_links['anilist']
+                'search_link': jikan.get('url') or search_links['myanimelist']
             })
 
         with open(temp_path, 'rb') as f:
@@ -1478,8 +1518,7 @@ def search_anime():
             safe_remove_file(temp_path)
             return jsonify({
                 'found': False,
-                'message':
-                'فشل الاتصال بخدمة البحث. تأكد من إعداد مفاتيح Gemini API أو جرب لاحقاً.',
+                'message': 'لم يتم التعرف على الأنمي. جرب البحث بالاسم.',
                 'suggest_search_by_name': True
             })
 
@@ -1560,14 +1599,30 @@ def search_anime():
             secs = int(seconds) % 60
             return f"{mins:02d}:{secs:02d}"
 
+        from urllib.parse import quote as url_quote
+        jikan = get_anime_details_from_jikan(anime_name)
         result = {
             'found': True,
-            'anime_name': anime_name,
+            'anime_name': jikan.get('title_en') or anime_name,
+            'anime_name_jp': jikan.get('title_jp', ''),
             'episode': episode if episode else 'غير معروف',
             'similarity': round(similarity * 100, 2),
             'timestamp': f"{format_time(from_time)} - {format_time(to_time)}",
             'video_preview': top_result.get('video', ''),
-            'image_preview': top_result.get('image', '')
+            'image_preview': jikan.get('image') or top_result.get('image', ''),
+            'score': jikan.get('score'),
+            'episodes': jikan.get('episodes'),
+            'genres': jikan.get('genres', []),
+            'type': jikan.get('type', ''),
+            'year': jikan.get('year'),
+            'description': jikan.get('synopsis', ''),
+            'mal_url': jikan.get('url', ''),
+            'detection_method': 'trace.moe',
+            'search_links': {
+                'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(anime_name)}",
+                'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(anime_name)}",
+                'youtube': f"https://www.youtube.com/results?search_query={url_quote(anime_name + ' anime')}",
+            }
         }
 
         duration_ms = int((time.time() - start_time) * 1000)
@@ -1632,102 +1687,49 @@ def search_anime_by_name():
                     'original_input': name
                 }
 
-        anilist_query = '''
-        query ($search: String) {
-            Page(page: 1, perPage: 5) {
-                media(search: $search, type: ANIME, sort: POPULARITY_DESC) {
-                    id
-                    title {
-                        romaji
-                        english
-                        native
-                    }
-                    description(asHtml: false)
-                    coverImage {
-                        large
-                        medium
-                    }
-                    episodes
-                    status
-                    genres
-                    averageScore
-                    seasonYear
-                    siteUrl
-                }
-            }
-        }
-        '''
+        # Use Jikan (MyAnimeList) API - free, no key required
+        from urllib.parse import quote
+        jikan_resp = requests.get(
+            f'https://api.jikan.moe/v4/anime?q={quote(search_term)}&limit=6&sfw=false',
+            timeout=15
+        )
 
-        response = requests.post('https://graphql.anilist.co',
-                                 json={
-                                     'query': anilist_query,
-                                     'variables': {
-                                         'search': search_term
-                                     }
-                                 },
-                                 timeout=15)
+        if jikan_resp.status_code != 200:
+            return jsonify({'error': 'فشل الاتصال بخدمة MyAnimeList. حاول مرة أخرى.'}), 500
 
-        if response.status_code != 200:
-            return jsonify({'error': 'فشل الاتصال بخدمة البحث'}), 500
+        jikan_data = jikan_resp.json().get('data', [])
 
-        data = response.json()
-        media_list = data.get('data', {}).get('Page', {}).get('media', [])
-
-        if not media_list:
+        if not jikan_data:
             return jsonify({
                 'found': False,
-                'message':
-                'لم يتم العثور على نتائج. جرب اسماً أو وصفاً مختلفاً.',
+                'message': 'لم يتم العثور على نتائج. جرب اسماً أو وصفاً مختلفاً.',
                 'gemini_suggestion': gemini_suggestion
             })
 
-        from urllib.parse import quote
         results = []
-        for media in media_list:
-            title_info = media.get('title', {})
-            anime_name = title_info.get('english') or title_info.get(
-                'romaji') or title_info.get('native') or 'غير معروف'
-
-            description = media.get('description', '')
-            if description:
-                description = re.sub(r'<[^>]+>', '', description)
-                if len(description) > 300:
-                    description = description[:300] + '...'
-
+        for a in jikan_data:
+            synopsis = a.get('synopsis') or ''
+            if len(synopsis) > 300:
+                synopsis = synopsis[:300] + '...'
+            anime_name = a.get('title_english') or a.get('title') or 'غير معروف'
             results.append({
-                'id':
-                media.get('id'),
-                'name':
-                anime_name,
-                'name_native':
-                title_info.get('native', ''),
-                'description':
-                description or 'لا يوجد وصف متاح',
-                'cover':
-                media.get('coverImage', {}).get('large')
-                or media.get('coverImage', {}).get('medium', ''),
-                'episodes':
-                media.get('episodes') or 'غير محدد',
-                'status':
-                media.get('status', 'غير معروف'),
-                'genres':
-                media.get('genres', []),
-                'score':
-                media.get('averageScore') or 0,
-                'year':
-                media.get('seasonYear') or 'غير معروف',
-                'anilist_url':
-                media.get('siteUrl', ''),
+                'id': a.get('mal_id'),
+                'name': anime_name,
+                'name_jp': a.get('title_japanese', ''),
+                'description': synopsis or 'لا يوجد وصف متاح',
+                'cover': a.get('images', {}).get('jpg', {}).get('large_image_url') or
+                         a.get('images', {}).get('jpg', {}).get('image_url', ''),
+                'episodes': a.get('episodes') or 'غير محدد',
+                'status': a.get('status', 'غير معروف'),
+                'genres': [g.get('name', '') for g in a.get('genres', [])[:4]],
+                'score': a.get('score') or 0,
+                'year': a.get('year') or (a.get('aired', {}).get('prop', {}).get('from', {}).get('year', 'غير معروف')),
+                'type': a.get('type', ''),
+                'mal_url': a.get('url', ''),
                 'search_links': {
-                    'anilist':
-                    media.get(
-                        'siteUrl',
-                        f"https://anilist.co/search/anime?search={quote(anime_name)}"
-                    ),
-                    'myanimelist':
-                    f"https://myanimelist.net/anime.php?q={quote(anime_name)}",
-                    'crunchyroll':
-                    f"https://www.crunchyroll.com/search?q={quote(anime_name)}"
+                    'myanimelist': a.get('url', f"https://myanimelist.net/anime.php?q={quote(anime_name)}"),
+                    'crunchyroll': f"https://www.crunchyroll.com/search?q={quote(anime_name)}",
+                    'youtube': f"https://www.youtube.com/results?search_query={quote(anime_name + ' anime')}",
                 }
             })
 
@@ -2068,6 +2070,70 @@ def ocr_image():
                     duration_ms=duration_ms, file_size=file_size, error_message=str(e))
         log_error('OCRError', str(e), traceback.format_exc(), tool_name='ocr_extraction')
         return jsonify({'error': f'خطأ: {str(e)}'}), 500
+
+
+@app.route('/search-podcast-by-name', methods=['POST'])
+def search_podcast_by_name():
+    """Search for podcast by name using iTunes Search API - free, no key needed."""
+    start_time = time.time()
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+
+        if not name or len(name) < 2:
+            return jsonify({'error': 'الرجاء إدخال اسم البودكاست'}), 400
+
+        resp = requests.get(
+            'https://itunes.apple.com/search',
+            params={'term': name, 'media': 'podcast', 'limit': 8, 'lang': 'ar_sa'},
+            timeout=15
+        )
+
+        if resp.status_code != 200:
+            return jsonify({'error': 'فشل الاتصال بـ iTunes. حاول مرة أخرى.'}), 500
+
+        results = resp.json().get('results', [])
+
+        if not results:
+            # Try without Arabic locale
+            resp2 = requests.get(
+                'https://itunes.apple.com/search',
+                params={'term': name, 'media': 'podcast', 'limit': 8},
+                timeout=15
+            )
+            results = resp2.json().get('results', []) if resp2.status_code == 200 else []
+
+        if not results:
+            return jsonify({'found': False, 'message': 'لم يتم العثور على بودكاست بهذا الاسم.'})
+
+        from urllib.parse import quote
+        podcasts = []
+        for p in results:
+            podcasts.append({
+                'name': p.get('collectionName', ''),
+                'artist': p.get('artistName', ''),
+                'artwork': p.get('artworkUrl600') or p.get('artworkUrl100', ''),
+                'genre': p.get('primaryGenreName', ''),
+                'episodes': p.get('trackCount', 0),
+                'itunes_url': p.get('collectionViewUrl', ''),
+                'feed_url': p.get('feedUrl', ''),
+                'search_links': {
+                    'itunes': p.get('collectionViewUrl', ''),
+                    'spotify': f"https://open.spotify.com/search/{quote(p.get('collectionName', name))}",
+                    'youtube': f"https://www.youtube.com/results?search_query={quote(p.get('collectionName', name))}",
+                    'soundcloud': f"https://soundcloud.com/search?q={quote(p.get('collectionName', name))}",
+                }
+            })
+
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('podcast_search_name', 'search', 'success', duration_ms=duration_ms,
+                    details=json.dumps({'query': name, 'results': len(podcasts)}))
+
+        return jsonify({'found': True, 'results': podcasts})
+
+    except Exception as e:
+        log_error('PodcastSearchError', str(e), traceback.format_exc(), tool_name='podcast_search_name')
+        return jsonify({'error': f'خطأ: {str(e)[:100]}'}), 500
 
 
 @app.route('/search-podcast-by-image', methods=['POST'])

@@ -3583,21 +3583,32 @@
                             <p class="text-slate-400">جاري البحث...</p>
                         </div>
 
-                        <div id="anime-result" class="hidden glass rounded-xl p-6">
-                            <h3 class="font-bold text-lg mb-4 text-slate-100 border-b border-cyan-500/20 pb-2">نتيجة البحث
-                            </h3>
-                            <div class="space-y-3">
-                                <p><span class="text-slate-400">اسم الأنمي:</span> <span id="result-name"
-                                        class="font-bold text-pink-600"></span></p>
-                                <p><span class="text-slate-400">الحلقة:</span> <span id="result-episode"
-                                        class="font-bold"></span></p>
-                                <p><span class="text-slate-400">التوقيت:</span> <span id="result-timestamp"
-                                        class="font-bold"></span></p>
-                                <p><span class="text-slate-400">نسبة التطابق:</span> <span id="result-similarity"
-                                        class="font-bold text-green-600"></span>%</p>
+                        <div id="anime-result" class="hidden glass rounded-xl overflow-hidden">
+                            <!-- Header with cover image -->
+                            <div class="flex gap-4 p-5">
+                                <img id="result-cover-img" src="" alt="" class="w-28 h-40 object-cover rounded-xl shadow-lg hidden flex-shrink-0">
+                                <div class="flex-1 min-w-0">
+                                    <h3 id="result-name" class="font-bold text-xl text-white mb-1 leading-tight"></h3>
+                                    <p id="result-name-jp" class="text-slate-400 text-sm mb-3"></p>
+                                    <!-- Badges -->
+                                    <div class="flex flex-wrap gap-2 mb-3" id="result-badges"></div>
+                                    <!-- Genres -->
+                                    <div id="result-genres-wrap" class="flex flex-wrap gap-1 mb-3"></div>
+                                    <!-- Description -->
+                                    <p id="result-description" class="text-slate-300 text-sm line-clamp-3 hidden"></p>
+                                </div>
                             </div>
-                            <div id="anime-preview-video" class="mt-4 hidden">
-                                <video id="result-video" controls class="w-full rounded-lg shadow-md"></video>
+                            <!-- Match info bar -->
+                            <div class="border-t border-white/10 px-5 py-3 flex flex-wrap gap-4 text-sm">
+                                <span class="text-slate-400">الحلقة: <span id="result-episode" class="text-white font-medium"></span></span>
+                                <span id="result-timestamp-wrap" class="text-slate-400 hidden">التوقيت: <span id="result-timestamp" class="text-white font-medium"></span></span>
+                                <span id="result-similarity-wrap" class="text-slate-400 hidden">تطابق: <span id="result-similarity" class="text-green-400 font-bold"></span>%</span>
+                            </div>
+                            <!-- Action buttons -->
+                            <div class="border-t border-white/10 px-5 py-3" id="result-links-wrap"></div>
+                            <!-- Video preview -->
+                            <div id="anime-preview-video" class="p-4 hidden">
+                                <video id="result-video" controls class="w-full rounded-lg shadow-md max-h-48"></video>
                             </div>
                         </div>
 
@@ -3697,21 +3708,52 @@
 
                     <!-- Tab Selection -->
                     <div class="flex rounded-xl overflow-hidden border-2 border-green-500/30 mb-6">
-                        <button id="podcast-tab-image" onclick="setPodcastMode('image')"
+                        <button id="podcast-tab-name" onclick="setPodcastMode('name')"
                             class="tab-btn active flex-1 py-3 font-medium"
                             style="background: linear-gradient(135deg, #22c55e, #10b981); color: white;">
+                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="28" cy="28" r="16" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M40 40L52 52" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg></span>
+                            بحث بالاسم
+                        </button>
+                        <button id="podcast-tab-image" onclick="setPodcastMode('image')"
+                            class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-green-900/30">
                             <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><rect x="8" y="12" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><circle cx="24" cy="28" r="6" fill="currentColor"/><path d="M8 44L24 32L36 40L56 24" stroke="currentColor" stroke-width="2.5" fill="none"/></svg></span>
                             من صورة
                         </button>
                         <button id="podcast-tab-audio" onclick="setPodcastMode('audio')"
                             class="tab-btn flex-1 py-3 font-medium bg-slate-800/50 text-slate-300 hover:bg-green-900/30">
                             <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><path d="M32 8C28 8 26 12 26 18V34C26 40 28 44 32 44C36 44 38 40 38 34V18C38 12 36 8 32 8Z" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M20 30V34C20 42 25 48 32 48C39 48 44 42 44 34V30" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M32 48V56" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
-                            من مقطع صوتي
+                            من صوت
                         </button>
                     </div>
 
+                    <!-- Name Search Mode -->
+                    <div id="podcast-name-mode" class="space-y-6">
+                        <div>
+                            <label class="block text-slate-300 font-medium mb-2">اسم البودكاست:</label>
+                            <input type="text" id="podcast-name-input"
+                                placeholder="مثال: فنجان، بودكاست ثمانية، سواليف..."
+                                class="w-full rounded-xl p-4 text-lg"
+                                onkeydown="if(event.key==='Enter') searchPodcastByName()">
+                        </div>
+                        <button onclick="searchPodcastByName()" id="search-podcast-name-btn"
+                            class="w-full py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg flex items-center justify-center gap-3 hover:shadow-lg transition-all">
+                            <span>🔍</span> بحث عن البودكاست
+                        </button>
+                        <div id="podcast-name-loading" class="hidden text-center py-8">
+                            <div class="loader mx-auto mb-4" style="border-top-color: #22c55e;"></div>
+                            <p class="text-slate-400">جاري البحث في iTunes...</p>
+                        </div>
+                        <div id="podcast-name-results" class="hidden space-y-4"></div>
+                        <div id="podcast-name-not-found" class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
+                            <span>⚠️</span> <span id="podcast-name-not-found-text"></span>
+                        </div>
+                        <div id="podcast-name-error" class="hidden p-4 rounded-xl bg-red-900/30 border border-red-500/30 text-red-400">
+                            <span>❌</span> <span id="podcast-name-error-text"></span>
+                        </div>
+                    </div>
+
                     <!-- Image Mode -->
-                    <div id="podcast-image-mode" class="space-y-6">
+                    <div id="podcast-image-mode" class="hidden space-y-6">
                         <div class="file-upload rounded-xl p-8 text-center cursor-pointer"
                             onclick="document.getElementById('podcast-image').click()">
                             <input type="file" id="podcast-image" accept="image/*" class="hidden"
@@ -4910,26 +4952,25 @@
         }
 
         function setPodcastMode(mode) {
-            const imageTab = document.getElementById('podcast-tab-image');
-            const audioTab = document.getElementById('podcast-tab-audio');
-            const imageMode = document.getElementById('podcast-image-mode');
-            const audioMode = document.getElementById('podcast-audio-mode');
-
-            if (mode === 'image') {
-                imageTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
-                imageTab.style.color = 'white';
-                audioTab.style.background = 'rgba(30, 41, 59, 0.5)';
-                audioTab.style.color = '#94a3b8';
-                imageMode.classList.remove('hidden');
-                audioMode.classList.add('hidden');
-            } else {
-                audioTab.style.background = 'linear-gradient(135deg, #22c55e, #10b981)';
-                audioTab.style.color = 'white';
-                imageTab.style.background = 'rgba(30, 41, 59, 0.5)';
-                imageTab.style.color = '#94a3b8';
-                audioMode.classList.remove('hidden');
-                imageMode.classList.add('hidden');
-            }
+            const tabs = {
+                name: document.getElementById('podcast-tab-name'),
+                image: document.getElementById('podcast-tab-image'),
+                audio: document.getElementById('podcast-tab-audio'),
+            };
+            const modes = {
+                name: document.getElementById('podcast-name-mode'),
+                image: document.getElementById('podcast-image-mode'),
+                audio: document.getElementById('podcast-audio-mode'),
+            };
+            const activeStyle = 'linear-gradient(135deg, #22c55e, #10b981)';
+            const inactiveStyle = 'rgba(30, 41, 59, 0.5)';
+            Object.entries(tabs).forEach(([key, tab]) => {
+                tab.style.background = key === mode ? activeStyle : inactiveStyle;
+                tab.style.color = key === mode ? 'white' : '#94a3b8';
+            });
+            Object.entries(modes).forEach(([key, modeEl]) => {
+                modeEl.classList.toggle('hidden', key !== mode);
+            });
         }
 
         function updateWordCount() {
@@ -5792,9 +5833,59 @@
 
                 if (data.found) {
                     document.getElementById('result-name').textContent = data.anime_name;
-                    document.getElementById('result-episode').textContent = data.episode;
-                    document.getElementById('result-timestamp').textContent = data.timestamp;
-                    document.getElementById('result-similarity').textContent = data.similarity;
+
+                    const jpEl = document.getElementById('result-name-jp');
+                    jpEl.textContent = data.anime_name_jp || '';
+
+                    // Cover image
+                    const coverImg = document.getElementById('result-cover-img');
+                    if (data.image_preview) {
+                        coverImg.src = data.image_preview;
+                        coverImg.classList.remove('hidden');
+                    } else { coverImg.classList.add('hidden'); }
+
+                    // Episode & timestamp
+                    document.getElementById('result-episode').textContent = data.episode || 'غير معروف';
+                    const tsWrap = document.getElementById('result-timestamp-wrap');
+                    if (data.timestamp && data.timestamp !== ' - ' && data.timestamp !== '00:00 - 00:00') {
+                        document.getElementById('result-timestamp').textContent = data.timestamp;
+                        tsWrap.classList.remove('hidden');
+                    } else { tsWrap.classList.add('hidden'); }
+
+                    const simWrap = document.getElementById('result-similarity-wrap');
+                    if (data.similarity && data.similarity !== 'AI') {
+                        document.getElementById('result-similarity').textContent = data.similarity;
+                        simWrap.classList.remove('hidden');
+                    } else { simWrap.classList.add('hidden'); }
+
+                    // Badges (score, episodes, year, type)
+                    const badgesEl = document.getElementById('result-badges');
+                    badgesEl.innerHTML = '';
+                    if (data.score) badgesEl.innerHTML += `<span class="badge bg-yellow-900/40 text-yellow-300 border border-yellow-500/30">⭐ ${data.score}</span>`;
+                    if (data.episodes) badgesEl.innerHTML += `<span class="badge bg-blue-900/40 text-blue-300 border border-blue-500/30">📺 ${data.episodes} حلقة</span>`;
+                    if (data.year) badgesEl.innerHTML += `<span class="badge bg-slate-700/50 text-slate-300 border border-slate-500/30">📅 ${data.year}</span>`;
+                    if (data.type) badgesEl.innerHTML += `<span class="badge bg-purple-900/40 text-purple-300 border border-purple-500/30">${data.type}</span>`;
+
+                    // Genres
+                    const genresEl = document.getElementById('result-genres-wrap');
+                    genresEl.innerHTML = (data.genres || []).map(g => `<span class="text-xs px-2 py-1 rounded-full bg-pink-900/30 text-pink-300 border border-pink-500/20">${g}</span>`).join('');
+
+                    // Description
+                    const descEl = document.getElementById('result-description');
+                    if (data.description) {
+                        descEl.textContent = data.description;
+                        descEl.classList.remove('hidden');
+                    } else { descEl.classList.add('hidden'); }
+
+                    // Action links
+                    const linksEl = document.getElementById('result-links-wrap');
+                    const links = data.search_links || {};
+                    const mal = data.mal_url || links.myanimelist;
+                    linksEl.innerHTML = `<div class="flex flex-wrap gap-2">
+                        ${mal ? `<a href="${mal}" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-500 font-medium">MyAnimeList</a>` : ''}
+                        ${links.crunchyroll ? `<a href="${links.crunchyroll}" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-orange-600 text-white hover:bg-orange-500 font-medium">Crunchyroll</a>` : ''}
+                        ${links.youtube ? `<a href="${links.youtube}" target="_blank" class="text-xs px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-500 font-medium">YouTube</a>` : ''}
+                    </div>`;
 
                     if (data.video_preview) {
                         document.getElementById('result-video').src = data.video_preview;
@@ -5805,7 +5896,7 @@
 
                     resultDiv.classList.remove('hidden');
                 } else {
-                    document.getElementById('not-found-text').textContent = data.message;
+                    document.getElementById('not-found-text').textContent = data.message || 'لم يتم التعرف على الأنمي. جرب البحث بالاسم.';
                     notFoundDiv.classList.remove('hidden');
                 }
 
@@ -5923,6 +6014,65 @@
             } finally {
                 searchBtn.disabled = false;
                 loadingDiv.classList.add('hidden');
+            }
+        }
+
+        async function searchPodcastByName() {
+            const nameInput = document.getElementById('podcast-name-input').value.trim();
+            if (!nameInput) { showToast('الرجاء إدخال اسم البودكاست', 'error'); return; }
+
+            const btn = document.getElementById('search-podcast-name-btn');
+            const loading = document.getElementById('podcast-name-loading');
+            const results = document.getElementById('podcast-name-results');
+            const notFound = document.getElementById('podcast-name-not-found');
+            const errorEl = document.getElementById('podcast-name-error');
+
+            btn.disabled = true;
+            loading.classList.remove('hidden');
+            results.classList.add('hidden');
+            notFound.classList.add('hidden');
+            errorEl.classList.add('hidden');
+
+            try {
+                const resp = await fetch('/search-podcast-by-name', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: nameInput})
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'خطأ في البحث');
+
+                if (data.found && data.results && data.results.length > 0) {
+                    results.innerHTML = data.results.map(p => `
+                        <div class="glass rounded-xl overflow-hidden flex gap-4 p-4">
+                            ${p.artwork ? `<img src="${p.artwork}" alt="${p.name}" class="w-20 h-20 object-cover rounded-xl flex-shrink-0 shadow-lg">` : `<div class="w-20 h-20 rounded-xl flex-shrink-0 bg-slate-700 flex items-center justify-center text-3xl">🎙️</div>`}
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-bold text-white text-base leading-tight mb-0.5 truncate">${p.name}</h4>
+                                <p class="text-slate-400 text-sm mb-2 truncate">${p.artist}</p>
+                                <div class="flex flex-wrap gap-1.5 mb-3">
+                                    ${p.genre ? `<span class="text-xs px-2 py-0.5 rounded-full bg-green-900/40 text-green-300 border border-green-500/30">${p.genre}</span>` : ''}
+                                    ${p.episodes ? `<span class="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-500/30">📺 ${p.episodes} حلقة</span>` : ''}
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    ${p.search_links.itunes ? `<a href="${p.search_links.itunes}" target="_blank" class="text-xs px-2.5 py-1 rounded-lg bg-slate-700 text-slate-200 hover:bg-slate-600 font-medium"> iTunes</a>` : ''}
+                                    <a href="${p.search_links.spotify}" target="_blank" class="text-xs px-2.5 py-1 rounded-lg bg-green-900/60 text-green-300 hover:bg-green-800 font-medium">🎧 Spotify</a>
+                                    <a href="${p.search_links.youtube}" target="_blank" class="text-xs px-2.5 py-1 rounded-lg bg-red-900/60 text-red-300 hover:bg-red-800 font-medium">▶ YouTube</a>
+                                    <a href="${p.search_links.soundcloud}" target="_blank" class="text-xs px-2.5 py-1 rounded-lg bg-orange-900/60 text-orange-300 hover:bg-orange-800 font-medium">☁ SoundCloud</a>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    results.classList.remove('hidden');
+                } else {
+                    document.getElementById('podcast-name-not-found-text').textContent = data.message || 'لم يتم العثور على بودكاست بهذا الاسم.';
+                    notFound.classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('podcast-name-error-text').textContent = err.message;
+                errorEl.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                loading.classList.add('hidden');
             }
         }
 
