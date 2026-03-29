@@ -794,6 +794,65 @@ def identify_anime_by_description(description):
     return None
 
 
+def search_anime_with_saucenao(image_path: str) -> dict | None:
+    """Try to identify anime using SauceNAO reverse image search - free API, works with fan art."""
+    try:
+        with open(image_path, 'rb') as f:
+            resp = requests.post(
+                'https://saucenao.com/search.php',
+                data={'db': 999, 'output_type': 2, 'numres': 5},
+                files={'file': ('image.jpg', f, 'image/jpeg')},
+                timeout=20
+            )
+        if resp.status_code != 200:
+            return None
+
+        data = resp.json()
+        results = data.get('results', [])
+        if not results:
+            return None
+
+        # Filter for anime-related results (index 21=AniDB, 37=MAL, 5=Pixiv, 9=Danbooru)
+        ANIME_INDEXES = {21, 37}
+        anime_results = [r for r in results if int(r.get('header', {}).get('index_id', 0)) in ANIME_INDEXES]
+
+        # If no dedicated anime DB match, try any result with high similarity
+        candidates = anime_results or results
+
+        best = None
+        best_sim = 0.0
+        for r in candidates:
+            sim = float(r.get('header', {}).get('similarity', 0)) / 100.0
+            if sim > best_sim:
+                best_sim = sim
+                best = r
+
+        # Require at least 55% similarity for fan art
+        if not best or best_sim < 0.55:
+            return None
+
+        rdata = best.get('data', {})
+        # Extract anime title from various fields
+        title = (
+            rdata.get('title') or
+            rdata.get('anime') or
+            rdata.get('source') or
+            rdata.get('material') or
+            rdata.get('creator', [''])[0] if isinstance(rdata.get('creator'), list) else rdata.get('creator') or ''
+        )
+        if not title or len(title) < 2:
+            return None
+
+        return {
+            'anime_name': title.strip(),
+            'similarity': round(best_sim * 100, 1),
+            'index_id': best.get('header', {}).get('index_id'),
+        }
+    except Exception as e:
+        logging.warning(f'SauceNAO search failed: {e}')
+        return None
+
+
 def get_anime_details_from_jikan(anime_name: str) -> dict:
     """Fetch anime details from Jikan API (MyAnimeList wrapper) - free, no key needed."""
     try:
@@ -1531,11 +1590,38 @@ def search_anime():
         results = data.get('result', [])
 
         if not results:
+            # Fallback: try SauceNAO which works better with fan art / promotional images
+            snao = search_anime_with_saucenao(temp_path)
             safe_remove_file(temp_path)
+            if snao:
+                from urllib.parse import quote as url_quote
+                jikan = get_anime_details_from_jikan(snao['anime_name'])
+                return jsonify({
+                    'found': True,
+                    'anime_name': jikan.get('title_en') or snao['anime_name'],
+                    'anime_name_jp': jikan.get('title_jp', ''),
+                    'episode': 'غير معروف',
+                    'similarity': snao['similarity'],
+                    'timestamp': '',
+                    'video_preview': '',
+                    'image_preview': jikan.get('image', ''),
+                    'detection_method': 'saucenao',
+                    'description': jikan.get('synopsis', ''),
+                    'score': jikan.get('score'),
+                    'episodes': jikan.get('episodes'),
+                    'genres': jikan.get('genres', []),
+                    'type': jikan.get('type', ''),
+                    'year': jikan.get('year'),
+                    'mal_url': jikan.get('url', ''),
+                    'search_links': {
+                        'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(snao['anime_name'])}",
+                        'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(snao['anime_name'])}",
+                        'youtube': f"https://www.youtube.com/results?search_query={url_quote(snao['anime_name'] + ' anime')}",
+                    }
+                })
             return jsonify({
                 'found': False,
-                'message':
-                'لم يتم العثور على نتائج. جرب استخدام صورة أوضح أو البحث بالاسم.',
+                'message': 'لم يتم العثور على نتائج. جرب استخدام صورة أوضح أو البحث بالاسم.',
                 'suggest_search_by_name': True
             })
 
@@ -1543,11 +1629,38 @@ def search_anime():
         similarity = top_result.get('similarity', 0)
 
         if similarity < ANIME_SIMILARITY_THRESHOLD:
+            # Fallback: try SauceNAO
+            snao = search_anime_with_saucenao(temp_path)
             safe_remove_file(temp_path)
+            if snao:
+                from urllib.parse import quote as url_quote
+                jikan = get_anime_details_from_jikan(snao['anime_name'])
+                return jsonify({
+                    'found': True,
+                    'anime_name': jikan.get('title_en') or snao['anime_name'],
+                    'anime_name_jp': jikan.get('title_jp', ''),
+                    'episode': 'غير معروف',
+                    'similarity': snao['similarity'],
+                    'timestamp': '',
+                    'video_preview': '',
+                    'image_preview': jikan.get('image', ''),
+                    'detection_method': 'saucenao',
+                    'description': jikan.get('synopsis', ''),
+                    'score': jikan.get('score'),
+                    'episodes': jikan.get('episodes'),
+                    'genres': jikan.get('genres', []),
+                    'type': jikan.get('type', ''),
+                    'year': jikan.get('year'),
+                    'mal_url': jikan.get('url', ''),
+                    'search_links': {
+                        'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(snao['anime_name'])}",
+                        'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(snao['anime_name'])}",
+                        'youtube': f"https://www.youtube.com/results?search_query={url_quote(snao['anime_name'] + ' anime')}",
+                    }
+                })
             return jsonify({
                 'found': False,
-                'message':
-                'لم يتم العثور على تطابق دقيق. الرجاء استخدام صورة أوضح أو جرب البحث بالاسم.',
+                'message': 'لم يتم العثور على تطابق دقيق. الرجاء استخدام صورة أوضح أو جرب البحث بالاسم.',
                 'suggest_search_by_name': True
             })
 
