@@ -212,11 +212,6 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "allow_unplayable_formats": True,
                 "skip_unavailable_fragments": True,
                 "age_limit": 99,
-                "extractor_args": {
-                    "youtube": {
-                        "player_client": ["tv_embedded", "web_creator", "android_vr", "ios", "android", "web"],
-                    }
-                },
                 "http_headers": {
                     "User-Agent": (
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -1302,11 +1297,6 @@ def video_info():
             'retries': 3,
             'age_limit': 99,
             'format': 'bestvideo*+bestaudio*/best*',
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                }
-            },
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -1385,11 +1375,6 @@ def get_video_formats():
             'retries': 3,
             'age_limit': 99,
             'format': 'bestvideo*+bestaudio*/best*',
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                }
-            },
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
@@ -1492,11 +1477,6 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'no_warnings': True,
             'socket_timeout': 7200,
             'retries': 10,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                }
-            },
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
@@ -1507,12 +1487,10 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             },
         }
     else:
-        # تحميل الفيديو بالجودة المحددة
         height = quality.replace('p', '') if quality else '720'
         output_template = os.path.join(output_dir, f'video_{unique_id}.%(ext)s')
         
-        # اختيار أفضل فورمات بناءً على الجودة المطلوبة
-        format_string = f'bestvideo[height<={height}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={height}]+bestaudio/best[height<={height}]/best'
+        format_string = f'bestvideo*[height<={height}]+bestaudio*/bestvideo*+bestaudio*/best*'
         
         ydl_opts = {
             'format': format_string,
@@ -1523,11 +1501,6 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'no_warnings': True,
             'socket_timeout': 7200,
             'retries': 10,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                }
-            },
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
             },
@@ -2989,7 +2962,11 @@ def cleanup_download_files(output_template, output_file):
 
 @app.route('/api/version')
 def api_version():
-    return jsonify({'version': 'v2-format-fix', 'timestamp': '2026-03-30', 'yt_dlp_version': getattr(yt_dlp, 'version', {}).get('__version__', 'unknown') if hasattr(yt_dlp, 'version') else yt_dlp.version.__version__ if hasattr(yt_dlp, 'version') else 'unknown'})
+    try:
+        ver = yt_dlp.version.__version__
+    except Exception:
+        ver = 'unknown'
+    return jsonify({'version': 'v4-no-extractor-args', 'timestamp': '2026-03-30', 'yt_dlp_version': ver})
 
 @app.route('/cookie-check', methods=['POST'])
 @login_required
@@ -3018,7 +2995,6 @@ def cookie_check():
                 'skip_download': True,
                 'cookiefile': COOKIES_FILE_PATH,
                 'socket_timeout': 15,
-                'extractor_args': {'youtube': {'player_client': ['tv_embedded', 'web_creator']}},
             }
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -3057,11 +3033,6 @@ def estimate_size():
             'nocheckcertificate': True,
             'geo_bypass': True,
             'geo_bypass_country': 'US',
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'mweb', 'web'],
-                }
-            },
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Accept-Language': 'en-US,en;q=0.5',
@@ -3232,11 +3203,6 @@ def download_playlist():
         output_dir = os.path.join(UPLOAD_FOLDER, f'playlist_{unique_id}')
         os.makedirs(output_dir, exist_ok=True)
 
-        age_bypass_args = {
-            'youtube': {
-                'player_client': ['tv_embedded', 'web_creator', 'ios', 'android', 'web'],
-            }
-        }
         common_headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         }
@@ -3251,7 +3217,6 @@ def download_playlist():
                 'socket_timeout': 3600,
                 'retries': 5,
                 'age_limit': 99,
-                'extractor_args': age_bypass_args,
                 'http_headers': common_headers,
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
@@ -3270,7 +3235,6 @@ def download_playlist():
                 'socket_timeout': 3600,
                 'retries': 5,
                 'age_limit': 99,
-                'extractor_args': age_bypass_args,
                 'http_headers': common_headers,
             }
 
@@ -3385,14 +3349,6 @@ def download_video():
 
         has_cookies = os.path.exists(COOKIES_FILE_PATH)
 
-        # Never skip HLS/DASH — age-restricted videos are only available via HLS/DASH
-        age_bypass_extractor_args = {
-            'youtube': {
-                'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-            }
-        }
-        age_bypass_extractor_args_no_cookies = age_bypass_extractor_args
-
         info_opts = {
             'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
@@ -3403,7 +3359,6 @@ def download_video():
             'age_limit': 99,
             'nocheckcertificate': True,
             'geo_bypass': True,
-            'extractor_args': age_bypass_extractor_args if has_cookies else age_bypass_extractor_args_no_cookies,
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -3468,11 +3423,9 @@ def download_video():
         cookiefile_opt = COOKIES_FILE_PATH if os.path.exists(
             COOKIES_FILE_PATH) else None
 
-        dl_extractor_args = age_bypass_extractor_args if has_cookies else age_bypass_extractor_args_no_cookies
-
         if download_format == 'audio':
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio[ext=opus]/bestaudio*/best',
+                'format': 'bestaudio*/bestaudio/best*',
                 'outtmpl': output_template + '.%(ext)s',
                 'noplaylist': True,
                 'quiet': True,
@@ -3483,7 +3436,6 @@ def download_video():
                 'age_limit': 99,
                 'nocheckcertificate': True,
                 'geo_bypass': True,
-                'extractor_args': dl_extractor_args,
                 'http_headers': common_headers,
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
@@ -3539,7 +3491,6 @@ def download_video():
                     'age_limit': 99,
                     'nocheckcertificate': True,
                     'geo_bypass': True,
-                    'extractor_args': dl_extractor_args,
                     'http_headers': common_headers,
                     'postprocessors': [{
                         'key': 'FFmpegVideoConvertor',
@@ -3875,11 +3826,6 @@ def transcribe_video():
                 1024,
                 'http_chunk_size':
                 10485760,
-                'extractor_args': {
-                    'youtube': {
-                        'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                    }
-                },
                 'http_headers': {
                     'User-Agent':
                     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -3925,9 +3871,7 @@ def transcribe_video():
                     elif 'age' in error_msg or 'sign in' in error_msg or 'login' in error_msg:
                         # Try switching player client on next attempt instead of giving up
                         logging.warning(f"Age/login restriction attempt {attempt + 1}, retrying with alternate client...")
-                        alt_clients = [['tv_embedded'], ['mweb'], ['web_creator'], ['android_vr']]
-                        if attempt < len(alt_clients):
-                            ydl_opts['extractor_args'] = {'youtube': {'player_client': alt_clients[attempt]}}
+                        pass
                         if attempt < max_download_attempts - 1:
                             import time
                             time.sleep(2)
