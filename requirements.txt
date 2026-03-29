@@ -1,7 +1,6 @@
 deep-translator
 docx
 email-validator
-Flask
 Flask>=3.1.2
 flask-login
 flask-sqlalchemy
@@ -18,10 +17,8 @@ PyMuPDF
 pytesseract
 python-docx
 python-Levenshtein
-requests
 requests>=2.32.5
 SpeechRecognition
 sqlalchemy
 werkzeug
-yt-dlp
 yt-dlp>=2025.01.01
