@@ -335,10 +335,10 @@
         }
         
         .tool-card {
-            background: linear-gradient(145deg, rgba(15, 20, 45, 0.95), rgba(8, 12, 28, 0.98));
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--card-border-color, rgba(212, 175, 55, 0.25));
+            background: linear-gradient(145deg, rgba(8,14,28,0.80), rgba(5,9,20,0.92));
+            backdrop-filter: blur(18px) saturate(1.3);
+            -webkit-backdrop-filter: blur(18px) saturate(1.3);
+            border: 1px solid var(--card-border-color, rgba(184,115,51,0.25));
             border-radius: 1.25rem;
             padding: 1.25rem 1rem;
             cursor: pointer;
@@ -403,88 +403,115 @@
             filter: blur(0);
         }
         
+        /* === NEON ICON STYLE (image-inspired) === */
         .tool-card-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 1.25rem;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 0.875rem;
             position: relative;
-            background: linear-gradient(145deg, rgba(20, 25, 50, 0.95), rgba(10, 15, 35, 0.95));
-            border: 1.5px solid var(--icon-border-color, rgba(0, 191, 255, 0.4));
+            background: rgba(5, 9, 18, 0.55);
+            border: 2.5px solid var(--neon-color, #00bfff);
             box-shadow: 
-                0 0 20px var(--icon-glow, rgba(0, 191, 255, 0.2)),
-                0 0 40px var(--icon-glow, rgba(0, 191, 255, 0.1)),
-                inset 0 2px 4px rgba(255, 255, 255, 0.05),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.3);
+                0 0 14px var(--neon-glow, rgba(0,191,255,0.55)),
+                0 0 28px var(--neon-glow2, rgba(0,191,255,0.2)),
+                inset 0 0 12px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
         }
         
-        /* Icon container gradient overlay */
+        /* Subtle inner glow ring */
         .tool-card-icon::before {
             content: '';
             position: absolute;
-            inset: 0;
-            border-radius: 1.125rem;
-            background: radial-gradient(ellipse at 30% 20%, var(--icon-glow, rgba(0, 191, 255, 0.15)) 0%, transparent 60%);
+            inset: 4px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, var(--neon-glow2, rgba(0,191,255,0.12)) 0%, transparent 70%);
             pointer-events: none;
         }
         
         .tool-card:hover .tool-card-icon, .tool-card:active .tool-card-icon {
             box-shadow: 
-                0 0 30px var(--icon-glow, rgba(0, 191, 255, 0.5)),
-                0 0 60px var(--icon-glow, rgba(0, 191, 255, 0.25)),
-                inset 0 2px 4px rgba(255, 255, 255, 0.1);
+                0 0 22px var(--neon-glow, rgba(0,191,255,0.9)),
+                0 0 48px var(--neon-glow2, rgba(0,191,255,0.35)),
+                0 0 70px var(--neon-glow3, rgba(0,191,255,0.15)),
+                inset 0 0 10px rgba(0,0,0,0.3);
             transform: scale(1.1);
-            border-color: var(--icon-border-color, rgba(0, 191, 255, 0.7));
+            border-color: var(--neon-color, #00bfff);
         }
         
+        /* Force all SVG elements to use the neon color */
         .tool-card-icon svg {
-            width: 38px;
-            height: 38px;
-            filter: drop-shadow(0 0 8px var(--icon-glow, rgba(0, 191, 255, 0.9)));
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(0 0 6px var(--neon-glow, rgba(0,191,255,0.9)));
             transition: all 0.3s ease;
             position: relative;
             z-index: 1;
         }
+        .tool-card-icon svg path,
+        .tool-card-icon svg circle,
+        .tool-card-icon svg rect,
+        .tool-card-icon svg line,
+        .tool-card-icon svg polyline,
+        .tool-card-icon svg polygon,
+        .tool-card-icon svg ellipse {
+            stroke: var(--neon-color, #00bfff) !important;
+            fill: none !important;
+        }
+        /* Small accent dots stay filled */
+        .tool-card-icon svg circle[r="2"],
+        .tool-card-icon svg circle[r="3"],
+        .tool-card-icon svg circle[r="4"] {
+            fill: var(--neon-color, #00bfff) !important;
+        }
+        /* Solid shape fills (paths with fill set) */
+        .tool-card-icon svg path[fill="#FFD700"],
+        .tool-card-icon svg polygon[fill="#FFD700"],
+        .tool-card-icon svg rect[fill="#FFD700"] {
+            fill: var(--neon-color, #00bfff) !important;
+            stroke: none !important;
+        }
         
         .tool-card:hover .tool-card-icon svg, .tool-card:active .tool-card-icon svg {
             filter: 
-                drop-shadow(0 0 12px var(--icon-glow, rgba(0, 191, 255, 1))) 
-                drop-shadow(0 0 24px var(--icon-glow, rgba(0, 191, 255, 0.7)))
-                drop-shadow(0 0 40px var(--icon-glow, rgba(0, 191, 255, 0.4)));
-            transform: scale(1.05);
+                drop-shadow(0 0 10px var(--neon-glow, rgba(0,191,255,1)))
+                drop-shadow(0 0 20px var(--neon-glow2, rgba(0,191,255,0.7)))
+                drop-shadow(0 0 38px var(--neon-glow3, rgba(0,191,255,0.4)));
+            transform: scale(1.08);
         }
         
         .tool-card-title {
             font-size: 0.95rem;
             font-weight: 700;
-            color: #f1f5f9;
+            color: var(--neon-color, #f1f5f9);
             margin-bottom: 0.25rem;
-            text-shadow: 0 0 20px var(--icon-glow, rgba(0, 191, 255, 0.3));
+            text-shadow: 0 0 10px var(--neon-glow, rgba(0,191,255,0.5));
         }
         
         .tool-card-desc {
             font-size: 0.75rem;
             color: #94a3b8;
             line-height: 1.3;
+            opacity: 0.75;
         }
         
-        /* Enhanced Pharaonic color variants - gold, turquoise, purple */
-        .tool-card[data-color="gold"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #FFD700 50%, transparent 95%); --card-border-color: rgba(212, 175, 55, 0.5); --card-glow-shadow: rgba(255, 215, 0, 0.4); --icon-border-color: rgba(212, 175, 55, 0.6); --icon-glow: rgba(255, 215, 0, 0.7); }
-        .tool-card[data-color="turquoise"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #40E0D0 50%, transparent 95%); --card-border-color: rgba(64, 224, 208, 0.5); --card-glow-shadow: rgba(64, 224, 208, 0.4); --icon-border-color: rgba(64, 224, 208, 0.6); --icon-glow: rgba(64, 224, 208, 0.7); }
-        .tool-card[data-color="cyan"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #00e5ff 50%, transparent 95%); --card-border-color: rgba(0, 229, 255, 0.4); --card-glow-shadow: rgba(0, 229, 255, 0.3); --icon-border-color: rgba(0, 229, 255, 0.5); --icon-glow: rgba(0, 229, 255, 0.6); }
-        .tool-card[data-color="pink"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff4d94 50%, transparent 95%); --card-border-color: rgba(255, 77, 148, 0.4); --card-glow-shadow: rgba(255, 77, 148, 0.3); --icon-border-color: rgba(255, 77, 148, 0.5); --icon-glow: rgba(255, 77, 148, 0.6); }
-        .tool-card[data-color="yellow"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ffd000 50%, transparent 95%); --card-border-color: rgba(255, 208, 0, 0.4); --card-glow-shadow: rgba(255, 208, 0, 0.3); --icon-border-color: rgba(255, 208, 0, 0.5); --icon-glow: rgba(255, 208, 0, 0.6); }
-        .tool-card[data-color="green"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #00ff88 50%, transparent 95%); --card-border-color: rgba(0, 255, 136, 0.4); --card-glow-shadow: rgba(0, 255, 136, 0.3); --icon-border-color: rgba(0, 255, 136, 0.5); --icon-glow: rgba(0, 255, 136, 0.6); }
-        .tool-card[data-color="purple"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #9b59b6 50%, transparent 95%); --card-border-color: rgba(155, 89, 182, 0.5); --card-glow-shadow: rgba(155, 89, 182, 0.4); --icon-border-color: rgba(155, 89, 182, 0.6); --icon-glow: rgba(155, 89, 182, 0.7); }
-        .tool-card[data-color="orange"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff9500 50%, transparent 95%); --card-border-color: rgba(255, 149, 0, 0.4); --card-glow-shadow: rgba(255, 149, 0, 0.3); --icon-border-color: rgba(255, 149, 0, 0.5); --icon-glow: rgba(255, 149, 0, 0.6); }
-        .tool-card[data-color="red"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #ff453a 50%, transparent 95%); --card-border-color: rgba(255, 69, 58, 0.4); --card-glow-shadow: rgba(255, 69, 58, 0.3); --icon-border-color: rgba(255, 69, 58, 0.5); --icon-glow: rgba(255, 69, 58, 0.6); }
-        .tool-card[data-color="teal"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #30d5c8 50%, transparent 95%); --card-border-color: rgba(48, 213, 200, 0.4); --card-glow-shadow: rgba(48, 213, 200, 0.3); --icon-border-color: rgba(48, 213, 200, 0.5); --icon-glow: rgba(48, 213, 200, 0.6); }
-        .tool-card[data-color="blue"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #0a84ff 50%, transparent 95%); --card-border-color: rgba(10, 132, 255, 0.4); --card-glow-shadow: rgba(10, 132, 255, 0.3); --icon-border-color: rgba(10, 132, 255, 0.5); --icon-glow: rgba(10, 132, 255, 0.6); }
-        .tool-card[data-color="indigo"] { --card-glow-color: linear-gradient(90deg, transparent 5%, #7c5dfa 50%, transparent 95%); --card-border-color: rgba(124, 93, 250, 0.4); --card-glow-shadow: rgba(124, 93, 250, 0.3); --icon-border-color: rgba(124, 93, 250, 0.5); --icon-glow: rgba(124, 93, 250, 0.6); }
+        /* === NEON COLOR VARIANTS === */
+        .tool-card[data-color="gold"]     { --neon-color:#FFD700; --neon-glow:rgba(255,215,0,0.65); --neon-glow2:rgba(255,215,0,0.25); --neon-glow3:rgba(255,215,0,0.10); --card-border-color:rgba(255,215,0,0.30); --card-glow-color:linear-gradient(90deg,transparent 5%,#FFD700 50%,transparent 95%); --card-glow-shadow:rgba(255,215,0,0.30); }
+        .tool-card[data-color="turquoise"]{ --neon-color:#40E0D0; --neon-glow:rgba(64,224,208,0.65); --neon-glow2:rgba(64,224,208,0.25); --neon-glow3:rgba(64,224,208,0.10); --card-border-color:rgba(64,224,208,0.30); --card-glow-color:linear-gradient(90deg,transparent 5%,#40E0D0 50%,transparent 95%); --card-glow-shadow:rgba(64,224,208,0.30); }
+        .tool-card[data-color="cyan"]     { --neon-color:#00e5ff; --neon-glow:rgba(0,229,255,0.65); --neon-glow2:rgba(0,229,255,0.25); --neon-glow3:rgba(0,229,255,0.10); --card-border-color:rgba(0,229,255,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#00e5ff 50%,transparent 95%); --card-glow-shadow:rgba(0,229,255,0.28); }
+        .tool-card[data-color="pink"]     { --neon-color:#ff4da6; --neon-glow:rgba(255,77,166,0.65); --neon-glow2:rgba(255,77,166,0.25); --neon-glow3:rgba(255,77,166,0.10); --card-border-color:rgba(255,77,166,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#ff4da6 50%,transparent 95%); --card-glow-shadow:rgba(255,77,166,0.28); }
+        .tool-card[data-color="yellow"]   { --neon-color:#ffe000; --neon-glow:rgba(255,224,0,0.65); --neon-glow2:rgba(255,224,0,0.25); --neon-glow3:rgba(255,224,0,0.10); --card-border-color:rgba(255,224,0,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#ffe000 50%,transparent 95%); --card-glow-shadow:rgba(255,224,0,0.28); }
+        .tool-card[data-color="green"]    { --neon-color:#00ff88; --neon-glow:rgba(0,255,136,0.65); --neon-glow2:rgba(0,255,136,0.25); --neon-glow3:rgba(0,255,136,0.10); --card-border-color:rgba(0,255,136,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#00ff88 50%,transparent 95%); --card-glow-shadow:rgba(0,255,136,0.28); }
+        .tool-card[data-color="emerald"]  { --neon-color:#00e676; --neon-glow:rgba(0,230,118,0.65); --neon-glow2:rgba(0,230,118,0.25); --neon-glow3:rgba(0,230,118,0.10); --card-border-color:rgba(0,230,118,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#00e676 50%,transparent 95%); --card-glow-shadow:rgba(0,230,118,0.28); }
+        .tool-card[data-color="purple"]   { --neon-color:#bf5fff; --neon-glow:rgba(191,95,255,0.65); --neon-glow2:rgba(191,95,255,0.25); --neon-glow3:rgba(191,95,255,0.10); --card-border-color:rgba(191,95,255,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#bf5fff 50%,transparent 95%); --card-glow-shadow:rgba(191,95,255,0.28); }
+        .tool-card[data-color="orange"]   { --neon-color:#ff9500; --neon-glow:rgba(255,149,0,0.65); --neon-glow2:rgba(255,149,0,0.25); --neon-glow3:rgba(255,149,0,0.10); --card-border-color:rgba(255,149,0,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#ff9500 50%,transparent 95%); --card-glow-shadow:rgba(255,149,0,0.28); }
+        .tool-card[data-color="red"]      { --neon-color:#ff453a; --neon-glow:rgba(255,69,58,0.65); --neon-glow2:rgba(255,69,58,0.25); --neon-glow3:rgba(255,69,58,0.10); --card-border-color:rgba(255,69,58,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#ff453a 50%,transparent 95%); --card-glow-shadow:rgba(255,69,58,0.28); }
+        .tool-card[data-color="teal"]     { --neon-color:#00d4c8; --neon-glow:rgba(0,212,200,0.65); --neon-glow2:rgba(0,212,200,0.25); --neon-glow3:rgba(0,212,200,0.10); --card-border-color:rgba(0,212,200,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#00d4c8 50%,transparent 95%); --card-glow-shadow:rgba(0,212,200,0.28); }
+        .tool-card[data-color="blue"]     { --neon-color:#2979ff; --neon-glow:rgba(41,121,255,0.65); --neon-glow2:rgba(41,121,255,0.25); --neon-glow3:rgba(41,121,255,0.10); --card-border-color:rgba(41,121,255,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#2979ff 50%,transparent 95%); --card-glow-shadow:rgba(41,121,255,0.28); }
+        .tool-card[data-color="indigo"]   { --neon-color:#7c5dfa; --neon-glow:rgba(124,93,250,0.65); --neon-glow2:rgba(124,93,250,0.25); --neon-glow3:rgba(124,93,250,0.10); --card-border-color:rgba(124,93,250,0.28); --card-glow-color:linear-gradient(90deg,transparent 5%,#7c5dfa 50%,transparent 95%); --card-glow-shadow:rgba(124,93,250,0.28); }
         
         .tools-hub-back-btn {
             position: fixed;
@@ -1386,45 +1413,88 @@
             z-index: -1;
         }
 
-        /* Global Background - Static Image */
+        /* === STEAMPUNK GLASS MODERN BACKGROUND === */
+        @keyframes steamGlow {
+            0%   { opacity: 0.5; transform: scale(1);   }
+            50%  { opacity: 0.85; transform: scale(1.06); }
+            100% { opacity: 0.5; transform: scale(1);   }
+        }
+        @keyframes gearSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        @keyframes gearSpinR {
+            from { transform: rotate(360deg); }
+            to   { transform: rotate(0deg); }
+        }
+
         .global-video-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 0;
             pointer-events: none;
             overflow: hidden;
-            background-image: url('/static/images/pharaoh-bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            background-repeat: no-repeat;
+            /* Deep steampunk base */
+            background:
+                /* Copper macro grid */
+                linear-gradient(rgba(184, 115, 51, 0.09) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184, 115, 51, 0.09) 1px, transparent 1px),
+                /* Fine micro grid */
+                linear-gradient(rgba(184, 115, 51, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184, 115, 51, 0.04) 1px, transparent 1px),
+                /* Dark steampunk base */
+                #050912;
+            background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px, 100% 100%;
         }
-        
-        /* Very light overlay - background fully visible */
-        .global-video-bg::after {
+
+        /* Steampunk glow orbs */
+        .global-video-bg::before {
             content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 5, 16, 0.05);
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 55% 45% at 15% 25%, rgba(184, 115, 51, 0.18) 0%, transparent 65%),
+                radial-gradient(ellipse 50% 60% at 85% 75%, rgba(0, 200, 160, 0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 40% 40% at 55% 10%, rgba(80, 130, 220, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 35% 35% at 30% 80%, rgba(120, 60, 200, 0.07) 0%, transparent 60%);
+            animation: steamGlow 8s ease-in-out infinite;
             pointer-events: none;
             z-index: 1;
         }
-        
-        /* Increase overlay when main app is visible */
-        body.app-active .global-video-bg::after {
-            background: rgba(5, 5, 16, 0.5);
+
+        /* Steampunk glass sheen overlay */
+        .global-video-bg::after {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 40%),
+                linear-gradient(225deg, rgba(184,115,51,0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 2;
         }
+
+        body.app-active .global-video-bg::after {
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.012) 0%, transparent 40%),
+                linear-gradient(225deg, rgba(184,115,51,0.05) 0%, transparent 50%);
+        }
+
+        /* Gear decorations */
+        .steampunk-gear {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.06;
+        }
+        .steampunk-gear svg { display: block; }
+        .steampunk-gear.gear-1 { width: 220px; height: 220px; top: -60px; left: -60px; animation: gearSpin 30s linear infinite; }
+        .steampunk-gear.gear-2 { width: 150px; height: 150px; top: 80px; left: 120px; animation: gearSpinR 20s linear infinite; }
+        .steampunk-gear.gear-3 { width: 280px; height: 280px; bottom: -80px; right: -80px; animation: gearSpin 40s linear infinite; }
+        .steampunk-gear.gear-4 { width: 120px; height: 120px; bottom: 120px; right: 160px; animation: gearSpinR 15s linear infinite; }
 
         /* Mobile Background */
         @media (max-width: 768px) {
             .global-video-bg {
-                background-image: url('/static/images/pharaoh-bg.jpg');
                 background-attachment: scroll;
             }
             
@@ -2380,34 +2450,51 @@
             --clr-dim: #64748b;
         }
 
-        /* ── Background ── */
+        /* ── Steampunk Background Override ── */
         .global-video-bg {
             background-image: none !important;
-            background: linear-gradient(135deg, #06061a 0%, #0c0c2e 40%, #07071f 70%, #06061a 100%) !important;
+            background:
+                linear-gradient(rgba(184,115,51,0.09) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184,115,51,0.09) 1px, transparent 1px),
+                linear-gradient(rgba(184,115,51,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(184,115,51,0.04) 1px, transparent 1px),
+                #050912 !important;
+            background-size: 80px 80px, 80px 80px, 20px 20px, 20px 20px, 100% 100% !important;
+        }
+        .global-video-bg::before {
+            background:
+                radial-gradient(ellipse 55% 45% at 15% 25%, rgba(184,115,51,0.18) 0%, transparent 65%),
+                radial-gradient(ellipse 50% 60% at 85% 75%, rgba(0,200,160,0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 40% 40% at 55% 10%, rgba(80,130,220,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 35% 35% at 30% 80%, rgba(120,60,200,0.07) 0%, transparent 60%) !important;
         }
         .global-video-bg::after {
-            background: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.12) 0%, transparent 55%),
-                        radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.10) 0%, transparent 55%),
-                        radial-gradient(ellipse at 50% 0%, rgba(6,182,212,0.07) 0%, transparent 45%) !important;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 40%),
+                linear-gradient(225deg, rgba(184,115,51,0.06) 0%, transparent 50%) !important;
         }
         body.app-active .global-video-bg::after {
-            background: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.08) 0%, transparent 55%),
-                        radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.07) 0%, transparent 55%) !important;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.012) 0%, transparent 40%),
+                linear-gradient(225deg, rgba(184,115,51,0.05) 0%, transparent 50%) !important;
         }
         .pharaonic-overlay {
-            background: rgba(6,6,26,0.55) !important;
+            background: rgba(3,5,14,0.45) !important;
         }
         .pyramid-bg {
             display: none !important;
         }
 
-        /* ── Glassmorphism Base ── */
+        /* ── Steampunk Glass Base ── */
         .glass {
-            background: rgba(255,255,255,0.04) !important;
-            backdrop-filter: blur(20px) !important;
-            -webkit-backdrop-filter: blur(20px) !important;
-            border: 1px solid rgba(255,255,255,0.09) !important;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+            background: rgba(8,14,30,0.65) !important;
+            backdrop-filter: blur(20px) saturate(1.4) !important;
+            -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+            border: 1px solid rgba(184,115,51,0.18) !important;
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.5),
+                inset 0 1px 0 rgba(255,255,255,0.07),
+                inset 0 0 40px rgba(184,115,51,0.03) !important;
         }
         .soft-shadow {
             box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
@@ -2780,9 +2867,63 @@
 </head>
 
 <body class="text-slate-200">
-    <!-- Global Video Background - Always visible -->
+    <!-- Global Steampunk Background -->
     <div id="global-video-bg" class="global-video-bg"></div>
-    
+
+    <!-- Steampunk Gear Decorations -->
+    <div class="steampunk-gear gear-1" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 20a30 30 0 1 0 .001 60A30 30 0 0 0 50 20zm0 8a22 22 0 1 1 0 44 22 22 0 0 1 0-44z" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="4" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="82" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="4" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="82" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="16" y="16" width="8" height="14" rx="3" transform="rotate(45 16 16)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="76" y="16" width="8" height="14" rx="3" transform="rotate(-45 76 16)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="16" y="76" width="8" height="14" rx="3" transform="rotate(-45 16 76)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="76" y="76" width="8" height="14" rx="3" transform="rotate(45 76 76)" fill="rgba(184,115,51,0.8)"/>
+            <circle cx="50" cy="50" r="10" fill="rgba(184,115,51,0.5)"/>
+        </svg>
+    </div>
+    <div class="steampunk-gear gear-2" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 25a25 25 0 1 0 .001 50A25 25 0 0 0 50 25zm0 7a18 18 0 1 1 0 36 18 18 0 0 1 0-36z" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="5" width="8" height="12" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="83" width="8" height="12" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="5" y="46" width="12" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="83" y="46" width="12" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="17" y="17" width="8" height="12" rx="3" transform="rotate(45 17 17)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="74" y="17" width="8" height="12" rx="3" transform="rotate(-45 74 17)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="17" y="74" width="8" height="12" rx="3" transform="rotate(-45 17 74)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="74" y="74" width="8" height="12" rx="3" transform="rotate(45 74 74)" fill="rgba(184,115,51,0.8)"/>
+            <circle cx="50" cy="50" r="8" fill="rgba(184,115,51,0.5)"/>
+        </svg>
+    </div>
+    <div class="steampunk-gear gear-3" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 18a32 32 0 1 0 .001 64A32 32 0 0 0 50 18zm0 8a24 24 0 1 1 0 48 24 24 0 0 1 0-48z" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="2" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="84" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="2" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="84" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="14" y="14" width="8" height="14" rx="3" transform="rotate(45 14 14)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="78" y="14" width="8" height="14" rx="3" transform="rotate(-45 78 14)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="14" y="78" width="8" height="14" rx="3" transform="rotate(-45 14 78)" fill="rgba(184,115,51,0.8)"/>
+            <rect x="78" y="78" width="8" height="14" rx="3" transform="rotate(45 78 78)" fill="rgba(184,115,51,0.8)"/>
+            <circle cx="50" cy="50" r="11" fill="rgba(184,115,51,0.5)"/>
+        </svg>
+    </div>
+    <div class="steampunk-gear gear-4" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 22a28 28 0 1 0 .001 56A28 28 0 0 0 50 22zm0 8a20 20 0 1 1 0 40 20 20 0 0 1 0-40z" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="4" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="46" y="82" width="8" height="14" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="4" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <rect x="82" y="46" width="14" height="8" rx="3" fill="rgba(184,115,51,0.8)"/>
+            <circle cx="50" cy="50" r="9" fill="rgba(184,115,51,0.5)"/>
+        </svg>
+    </div>
+
     <!-- Pharaonic Overlay -->
     <div class="pharaonic-overlay"></div>
     
