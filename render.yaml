@@ -1,12 +1,8 @@
 services:
   - type: web
     name: multi-tool-arabic-platform
-    env: python
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn --bind 0.0.0.0:$PORT --timeout 1800 --workers 1 --threads 1 main:app"
+    env: docker
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: SESSION_SECRET
         generateValue: true
       - key: DATABASE_URL
