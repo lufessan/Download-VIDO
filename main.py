@@ -1224,6 +1224,14 @@ def index():
                          supabase_anon_key=os.environ.get('SUPABASE_ANON_KEY', ''))
 
 
+@app.route('/sw.js')
+def service_worker():
+    response = send_file('static/sw.js', mimetype='application/javascript')
+    response.headers['Service-Worker-Allowed'] = '/'
+    response.headers['Cache-Control'] = 'no-cache'
+    return response
+
+
 @app.route('/logo.png')
 def serve_logo():
     return send_file('logo.png', mimetype='image/png')

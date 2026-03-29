@@ -9,6 +9,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16.png">
     <link rel="apple-touch-icon" sizes="64x64" href="/static/favicon-small.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/static/icons/icon-192x192.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6d28d9">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="أركان AI">
+    <meta name="application-name" content="أركان AI">
+    <meta name="msapplication-TileColor" content="#6d28d9">
+    <meta name="msapplication-TileImage" content="/static/icons/icon-144x144.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -8080,6 +8091,86 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkIfEntered();
             initSupabase();
+        });
+    </script>
+
+    <!-- PWA Install Banner -->
+    <div id="pwa-install-banner" class="hidden fixed bottom-4 left-4 right-4 z-[9999] max-w-sm mx-auto">
+        <div class="glass rounded-2xl p-4 border border-purple-500/30 shadow-2xl" style="background: rgba(15,10,40,0.95);">
+            <div class="flex items-center gap-3">
+                <img src="/static/icons/icon-72x72.png" class="w-12 h-12 rounded-xl flex-shrink-0" alt="أركان AI">
+                <div class="flex-1 min-w-0">
+                    <p class="text-white font-bold text-sm">ثبّت تطبيق أركان AI</p>
+                    <p class="text-slate-400 text-xs">استمتع بتجربة التطبيق الكاملة</p>
+                </div>
+                <div class="flex gap-2 flex-shrink-0">
+                    <button id="pwa-install-btn"
+                        class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-violet-600 text-white text-xs font-bold hover:shadow-lg transition-all">
+                        تثبيت
+                    </button>
+                    <button id="pwa-dismiss-btn"
+                        class="px-3 py-1.5 rounded-lg bg-slate-700/60 text-slate-300 text-xs hover:bg-slate-600/60 transition-all">
+                        لاحقاً
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA: Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('[PWA] Service Worker registered:', reg.scope))
+                    .catch(err => console.warn('[PWA] Service Worker failed:', err));
+            });
+        }
+
+        // PWA: Install Banner Logic
+        let pwaInstallPrompt = null;
+        const installBanner = document.getElementById('pwa-install-banner');
+        const installBtn = document.getElementById('pwa-install-btn');
+        const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+        // Check if already installed or dismissed
+        const pwaState = localStorage.getItem('pwa-state');
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            pwaInstallPrompt = e;
+            if (!isStandalone && pwaState !== 'dismissed' && pwaState !== 'installed') {
+                setTimeout(() => installBanner.classList.remove('hidden'), 3000);
+            }
+        });
+
+        installBtn && installBtn.addEventListener('click', async () => {
+            if (!pwaInstallPrompt) return;
+            installBanner.classList.add('hidden');
+            const result = await pwaInstallPrompt.prompt();
+            if (result && result.outcome === 'accepted') {
+                localStorage.setItem('pwa-state', 'installed');
+            }
+            pwaInstallPrompt = null;
+        });
+
+        dismissBtn && dismissBtn.addEventListener('click', () => {
+            installBanner.classList.add('hidden');
+            localStorage.setItem('pwa-state', 'dismissed');
+        });
+
+        // Show banner again if dismissed a long time ago (7 days)
+        if (pwaState === 'dismissed') {
+            const dismissedAt = parseInt(localStorage.getItem('pwa-dismissed-at') || '0');
+            if (Date.now() - dismissedAt > 7 * 24 * 60 * 60 * 1000) {
+                localStorage.removeItem('pwa-state');
+                localStorage.removeItem('pwa-dismissed-at');
+            }
+        }
+        dismissBtn && dismissBtn.addEventListener('click', () => {
+            localStorage.setItem('pwa-dismissed-at', Date.now().toString());
         });
     </script>
 </body>
