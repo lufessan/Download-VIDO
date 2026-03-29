@@ -1,0 +1,50 @@
+2026-03-29T22:31:57.593897855Z ==> 
+2026-03-29T22:31:57.60010839Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:31:57.60545446Z ==> 
+2026-03-29T22:31:57.611629994Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T22:31:57.618303776Z ==> 
+2026-03-29T22:31:57.622894253Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:34:29.755182388Z ==> Deploying...
+2026-03-29T22:34:57.18134544Z [2026-03-29 22:34:57 +0000] [7] [INFO] Starting gunicorn 25.3.0
+2026-03-29T22:34:57.181676067Z [2026-03-29 22:34:57 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-29T22:34:57.181740469Z [2026-03-29 22:34:57 +0000] [7] [INFO] Using worker: gthread
+2026-03-29T22:34:57.185342164Z [2026-03-29 22:34:57 +0000] [8] [INFO] Booting worker with pid: 8
+2026-03-29T22:34:57.583881803Z [2026-03-29 22:34:57 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-29T22:35:03.036231838Z ==> Your service is live 🎉
+2026-03-29T22:35:03.18879977Z ==> 
+2026-03-29T22:35:03.191198076Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:35:03.193984734Z ==> 
+2026-03-29T22:35:03.197164795Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T22:35:03.199109386Z ==> 
+2026-03-29T22:35:03.20114116Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:35:05.338594997Z INFO:root:[DB] Database already initialized with 7 tables
+2026-03-29T22:35:05.55732966Z INFO:root:============================================================
+2026-03-29T22:35:05.55736184Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-29T22:35:05.557376101Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-29T22:35:05.557472813Z INFO:root:Groq provider configured: True
+2026-03-29T22:35:05.557484473Z INFO:root:HuggingFace provider configured: False
+2026-03-29T22:35:05.557510723Z INFO:root:============================================================
+2026-03-29T22:35:48.478353609Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T22:35:49.983417304Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T22:36:40.054973617Z ==> Deploying...
+2026-03-29T22:37:05.439754805Z [2026-03-29 22:37:05 +0000] [7] [INFO] Starting gunicorn 25.3.0
+2026-03-29T22:37:05.440015571Z [2026-03-29 22:37:05 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-29T22:37:05.440063093Z [2026-03-29 22:37:05 +0000] [7] [INFO] Using worker: gthread
+2026-03-29T22:37:05.442854952Z [2026-03-29 22:37:05 +0000] [8] [INFO] Booting worker with pid: 8
+2026-03-29T22:37:05.776406737Z [2026-03-29 22:37:05 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-29T22:37:12.169472797Z ==> Your service is live 🎉
+2026-03-29T22:37:12.384863145Z ==> 
+2026-03-29T22:37:12.387567005Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:37:12.390050223Z ==> 
+2026-03-29T22:37:12.392897081Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T22:37:12.395451023Z ==> 
+2026-03-29T22:37:12.398443398Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:37:13.172596456Z INFO:root:[DB] Database already initialized with 7 tables
+2026-03-29T22:37:13.393117849Z INFO:root:============================================================
+2026-03-29T22:37:13.39314351Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-29T22:37:13.393188911Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-29T22:37:13.393264803Z INFO:root:Groq provider configured: True
+2026-03-29T22:37:13.393299424Z INFO:root:HuggingFace provider configured: False
+2026-03-29T22:37:13.393422177Z INFO:root:============================================================
+2026-03-29T22:38:11.459589537Z ERROR: [youtube] B4hp7F2W-Eg: Requested format is not available. Use --list-formats for a list of available formats
+2026-03-29T22:38:21.133971489Z ERROR: [youtube] B4hp7F2W-Eg: Requested format is not available. Use --list-formats for a list of available formats
