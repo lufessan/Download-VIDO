@@ -4083,10 +4083,83 @@
 
                     <div class="space-y-6">
                         <div>
-                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو:</label>
-                            <input type="text" id="downloader-url"
-                                placeholder="https://www.youtube.com/watch?v=... أو أي رابط فيديو آخر"
-                                class="w-full rounded-xl p-4">
+                            <label class="block text-slate-300 font-medium mb-2">رابط الفيديو أو البلاي ليست:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="downloader-url"
+                                    placeholder="https://www.youtube.com/watch?v=... أو رابط بلاي ليست"
+                                    class="w-full rounded-xl p-4"
+                                    oninput="onDownloaderUrlChange()">
+                                <button onclick="estimateDownloadSize()" id="estimate-size-btn"
+                                    title="حساب المساحة"
+                                    class="flex-shrink-0 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center gap-2 hover:shadow-lg transition-all text-sm whitespace-nowrap">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+                                        <rect x="8" y="8" width="48" height="48" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                                        <path d="M20 20H44M20 32H36M20 44H28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+                                        <circle cx="46" cy="46" r="10" fill="#f59e0b"/>
+                                        <path d="M46 42V46L49 49" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                    حساب المساحة
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Size Estimation Result -->
+                        <div id="size-estimate-card" class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30">
+                            <div id="size-estimate-loading" class="hidden text-center py-2">
+                                <div class="loader mx-auto mb-2" style="width:24px;height:24px;border-width:3px;border-top-color:#f59e0b;"></div>
+                                <p class="text-amber-400 text-sm">جاري حساب المساحة...</p>
+                            </div>
+                            <div id="size-estimate-result" class="hidden">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-400 flex-shrink-0">
+                                        <rect x="8" y="8" width="48" height="48" rx="6" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                                        <path d="M20 20H44M20 32H36M20 44H28" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"/>
+                                    </svg>
+                                    <span id="size-estimate-title" class="text-amber-300 font-semibold text-sm truncate"></span>
+                                </div>
+                                <div id="size-estimate-playlist-badge" class="hidden mb-2">
+                                    <span class="px-2 py-1 rounded-full text-xs bg-purple-900/40 text-purple-300 border border-purple-500/30">
+                                        بلاي ليست • <span id="size-playlist-count"></span> فيديو
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-3 rounded-lg bg-teal-900/30 border border-teal-500/20 text-center">
+                                        <p class="text-xs text-slate-400 mb-1">فيديو MP4</p>
+                                        <p id="size-video-val" class="text-teal-300 font-bold text-lg"></p>
+                                    </div>
+                                    <div class="p-3 rounded-lg bg-purple-900/30 border border-purple-500/20 text-center">
+                                        <p class="text-xs text-slate-400 mb-1">صوت MP3</p>
+                                        <p id="size-audio-val" class="text-purple-300 font-bold text-lg"></p>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2 text-center">* الأحجام تقديرية وقد تختلف قليلاً عند التحميل الفعلي</p>
+                            </div>
+                            <div id="size-estimate-error" class="hidden text-red-400 text-sm"></div>
+                        </div>
+
+                        <!-- Playlist Notice -->
+                        <div id="playlist-notice" class="hidden p-4 rounded-xl bg-purple-900/20 border border-purple-500/30">
+                            <div class="flex items-center gap-3 mb-3">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-400 flex-shrink-0">
+                                    <path d="M8 16H56M8 32H40M8 48H32" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"/>
+                                    <circle cx="52" cy="44" r="10" stroke="#a855f7" stroke-width="2.5" fill="none"/>
+                                    <path d="M49 44L55 44M52 41V47" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <p class="text-purple-300 font-semibold text-sm">تم اكتشاف بلاي ليست!</p>
+                            </div>
+                            <p class="text-slate-400 text-xs mb-3">يمكنك تحميل الفيديو الواحد فقط أو تحميل البلاي ليست كاملة (ستُحفظ كملف ZIP)</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button onclick="downloadPlaylist('audio')" id="playlist-download-audio-btn"
+                                    class="py-2 px-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"><path d="M8 16H56M8 32H40M8 48H32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M44 40L56 48L44 56V40Z" fill="currentColor"/></svg>
+                                    تحميل البلاي ليست MP3
+                                </button>
+                                <button onclick="downloadPlaylist('video')" id="playlist-download-video-btn"
+                                    class="py-2 px-3 rounded-lg bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-sm font-bold flex items-center justify-center gap-2 hover:shadow-lg transition-all">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"><rect x="8" y="16" width="48" height="32" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/><path d="M28 26L40 32L28 38V26Z" fill="currentColor"/></svg>
+                                    تحميل البلاي ليست MP4
+                                </button>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4210,7 +4283,7 @@
                                         <path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
                                     </svg>
                                 </span>
-                                الحد الأقصى: مدة ساعة واحدة وحجم 500 ميجابايت. الفيديو يُحوَّل إلى MP4 والصوت إلى MP3.
+                                الحد الأقصى للفيديو الواحد: ساعة واحدة وحجم 500 ميجابايت. البلاي ليست تُحمَّل كملف ZIP.
                             </p>
                         </div>
                     </div>
@@ -6535,6 +6608,155 @@
             }).catch(() => {
                 showToast('فشل نسخ النص', 'error');
             });
+        }
+
+        function onDownloaderUrlChange() {
+            const url = document.getElementById('downloader-url').value.trim();
+            const isPlaylist = url && (
+                /[?&]list=/.test(url) ||
+                /playlist/i.test(url) ||
+                (/youtube\.com/.test(url) && /[?&]list=/.test(url))
+            );
+            const playlistNotice = document.getElementById('playlist-notice');
+            if (isPlaylist) {
+                playlistNotice.classList.remove('hidden');
+            } else {
+                playlistNotice.classList.add('hidden');
+            }
+            // Reset size card if URL changes
+            document.getElementById('size-estimate-card').classList.add('hidden');
+            document.getElementById('size-estimate-result').classList.add('hidden');
+            document.getElementById('size-estimate-error').classList.add('hidden');
+        }
+
+        async function estimateDownloadSize() {
+            const url = document.getElementById('downloader-url').value.trim();
+            if (!url) {
+                showToast('الرجاء إدخال الرابط أولاً', 'error');
+                return;
+            }
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                showToast('الرابط غير صالح', 'error');
+                return;
+            }
+
+            const card = document.getElementById('size-estimate-card');
+            const loadingEl = document.getElementById('size-estimate-loading');
+            const resultEl = document.getElementById('size-estimate-result');
+            const errorEl = document.getElementById('size-estimate-error');
+            const btn = document.getElementById('estimate-size-btn');
+
+            card.classList.remove('hidden');
+            loadingEl.classList.remove('hidden');
+            resultEl.classList.add('hidden');
+            errorEl.classList.add('hidden');
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch('/estimate-size', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url})
+                });
+                const data = await resp.json();
+
+                if (!resp.ok || data.error) {
+                    errorEl.textContent = data.error || 'فشل في حساب المساحة';
+                    errorEl.classList.remove('hidden');
+                    return;
+                }
+
+                document.getElementById('size-estimate-title').textContent = data.title || '';
+                document.getElementById('size-video-val').textContent = data.video_size || 'غير متاح';
+                document.getElementById('size-audio-val').textContent = data.audio_size || 'غير متاح';
+
+                const playlistBadge = document.getElementById('size-estimate-playlist-badge');
+                if (data.is_playlist) {
+                    document.getElementById('size-playlist-count').textContent = data.count || 0;
+                    playlistBadge.classList.remove('hidden');
+                    // Also show the playlist notice
+                    document.getElementById('playlist-notice').classList.remove('hidden');
+                } else {
+                    playlistBadge.classList.add('hidden');
+                }
+
+                resultEl.classList.remove('hidden');
+            } catch (err) {
+                errorEl.textContent = 'خطأ في الاتصال بالخادم. حاول مرة أخرى.';
+                errorEl.classList.remove('hidden');
+            } finally {
+                loadingEl.classList.add('hidden');
+                btn.disabled = false;
+            }
+        }
+
+        async function downloadPlaylist(format = 'audio') {
+            const url = document.getElementById('downloader-url').value.trim();
+            if (!url) {
+                showToast('الرجاء إدخال رابط البلاي ليست', 'error');
+                return;
+            }
+
+            const audioBtnPL = document.getElementById('playlist-download-audio-btn');
+            const videoBtnPL = document.getElementById('playlist-download-video-btn');
+            const loadingDiv = document.getElementById('downloader-loading');
+            const loadingText = document.getElementById('downloader-loading-text');
+            const errorDiv = document.getElementById('downloader-error');
+            const videoBtn = document.getElementById('universal-download-video-btn');
+            const audioBtn = document.getElementById('universal-download-audio-btn');
+
+            audioBtnPL.disabled = true;
+            videoBtnPL.disabled = true;
+            videoBtn.disabled = true;
+            audioBtn.disabled = true;
+            loadingText.textContent = `جاري تحميل البلاي ليست ${format === 'audio' ? 'MP3' : 'MP4'}... قد يستغرق هذا وقتاً حسب عدد الفيديوهات`;
+            loadingDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const resp = await fetch('/download-playlist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({url, format})
+                });
+
+                if (!resp.ok) {
+                    const ct = resp.headers.get('content-type') || '';
+                    if (ct.includes('application/json')) {
+                        const d = await resp.json();
+                        throw new Error(d.error || 'فشل في تحميل البلاي ليست');
+                    }
+                    throw new Error('خطأ في الخادم');
+                }
+
+                const blob = await resp.blob();
+                if (!blob || blob.size === 0) throw new Error('لم يتم استلام الملف');
+
+                const contentDisposition = resp.headers.get('content-disposition') || '';
+                let filename = 'playlist.zip';
+                const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (match) filename = match[1].replace(/['"]/g, '');
+
+                const dlUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = dlUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(dlUrl);
+
+                showToast('تم تحميل البلاي ليست بنجاح!');
+            } catch (err) {
+                document.getElementById('downloader-error-text').textContent = err.message || 'خطأ غير متوقع';
+                errorDiv.classList.remove('hidden');
+            } finally {
+                audioBtnPL.disabled = false;
+                videoBtnPL.disabled = false;
+                videoBtn.disabled = false;
+                audioBtn.disabled = false;
+                loadingDiv.classList.add('hidden');
+            }
         }
 
         async function downloadUniversalMedia(format = 'video') {

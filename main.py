@@ -2935,6 +2935,265 @@ def cleanup_download_files(output_template, output_file):
     safe_remove_file(output_file)
 
 
+@app.route('/estimate-size', methods=['POST'])
+def estimate_size():
+    """Estimate file size for a video or playlist before downloading."""
+    try:
+        data = request.get_json()
+        url = data.get('url', '').strip()
+        if not url:
+            return jsonify({'error': 'الرجاء إدخال رابط'}), 400
+
+        age_bypass_args = {
+            'youtube': {
+                'player_client': ['tv_embedded', 'web_creator', 'ios', 'android', 'web'],
+                'skip': ['hls', 'dash'],
+            }
+        }
+        common_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+            'noplaylist': False,
+            'socket_timeout': 30,
+            'retries': 2,
+            'age_limit': 99,
+            'extractor_args': age_bypass_args,
+            'http_headers': common_headers,
+        }
+        if os.path.exists('cookies.txt'):
+            ydl_opts['cookiefile'] = 'cookies.txt'
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+        if not info:
+            return jsonify({'error': 'لم يتم العثور على محتوى في هذا الرابط'}), 400
+
+        def format_size(bytes_val):
+            if not bytes_val:
+                return None
+            if bytes_val < 1024 * 1024:
+                return f'{bytes_val / 1024:.1f} KB'
+            elif bytes_val < 1024 * 1024 * 1024:
+                return f'{bytes_val / (1024 * 1024):.1f} MB'
+            else:
+                return f'{bytes_val / (1024 * 1024 * 1024):.2f} GB'
+
+        def get_video_size(entry):
+            formats = entry.get('formats', [])
+            video_size = 0
+            audio_size = 0
+            for fmt in formats:
+                fs = fmt.get('filesize') or fmt.get('filesize_approx') or 0
+                vcodec = fmt.get('vcodec', 'none')
+                acodec = fmt.get('acodec', 'none')
+                if vcodec != 'none' and acodec != 'none':
+                    if fs > video_size:
+                        video_size = fs
+                elif vcodec != 'none' and fs > 0:
+                    if fs > video_size:
+                        video_size = fs
+                elif acodec != 'none' and fs > 0:
+                    if fs > audio_size:
+                        audio_size = fs
+            if not video_size and not audio_size:
+                # fallback: pick biggest format
+                sizes = [f.get('filesize') or f.get('filesize_approx') or 0 for f in formats]
+                video_size = max(sizes) if sizes else 0
+            return video_size, audio_size
+
+        is_playlist = info.get('_type') == 'playlist' or 'entries' in info
+
+        if is_playlist:
+            entries = list(info.get('entries', []))
+            entries = [e for e in entries if e]
+            total_video_bytes = 0
+            total_audio_bytes = 0
+            has_size_data = False
+            for entry in entries:
+                vs, as_ = get_video_size(entry)
+                total_video_bytes += vs
+                total_audio_bytes += as_
+                if vs or as_:
+                    has_size_data = True
+
+            return jsonify({
+                'is_playlist': True,
+                'title': info.get('title') or info.get('playlist_title') or 'قائمة تشغيل',
+                'count': len(entries),
+                'video_size': format_size(total_video_bytes) if has_size_data else 'غير متاح',
+                'audio_size': format_size(total_audio_bytes) if has_size_data else 'غير متاح',
+                'video_bytes': total_video_bytes,
+                'audio_bytes': total_audio_bytes,
+            })
+        else:
+            vs, as_ = get_video_size(info)
+            duration = info.get('duration', 0)
+            mins = int(duration) // 60 if duration else 0
+            secs = int(duration) % 60 if duration else 0
+            return jsonify({
+                'is_playlist': False,
+                'title': info.get('title', 'فيديو'),
+                'duration': f'{mins:02d}:{secs:02d}' if duration else 'غير معروف',
+                'video_size': format_size(vs) if vs else 'غير متاح',
+                'audio_size': format_size(as_) if as_ else 'غير متاح',
+                'video_bytes': vs,
+                'audio_bytes': as_,
+                'thumbnail': info.get('thumbnail', ''),
+            })
+
+    except yt_dlp.utils.DownloadError as e:
+        return jsonify({'error': f'خطأ في قراءة الرابط: {str(e)[:120]}'}), 400
+    except Exception as e:
+        logging.error(f'[EstimateSize] {e}')
+        return jsonify({'error': f'خطأ: {str(e)[:120]}'}), 500
+
+
+@app.route('/download-playlist', methods=['POST'])
+def download_playlist():
+    """Download an entire playlist as a ZIP archive."""
+    import zipfile
+    start_time = time.time()
+    output_dir = None
+    zip_path = None
+    try:
+        data = request.get_json()
+        url = data.get('url', '').strip()
+        download_format = data.get('format', 'audio')  # audio or video
+
+        if not url:
+            return jsonify({'error': 'الرجاء إدخال رابط البلاي ليست'}), 400
+
+        unique_id = str(uuid.uuid4())[:8]
+        output_dir = os.path.join(UPLOAD_FOLDER, f'playlist_{unique_id}')
+        os.makedirs(output_dir, exist_ok=True)
+
+        age_bypass_args = {
+            'youtube': {
+                'player_client': ['tv_embedded', 'web_creator', 'ios', 'android', 'web'],
+                'skip': ['hls', 'dash'],
+            }
+        }
+        common_headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
+
+        if download_format == 'audio':
+            ydl_opts = {
+                'format': 'bestaudio[ext=m4a]/bestaudio/best',
+                'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
+                'noplaylist': False,
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 3600,
+                'retries': 5,
+                'age_limit': 99,
+                'extractor_args': age_bypass_args,
+                'http_headers': common_headers,
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '128',
+                }],
+            }
+        else:
+            ydl_opts = {
+                'format': 'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio/best[ext=mp4]/best',
+                'merge_output_format': 'mp4',
+                'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
+                'noplaylist': False,
+                'quiet': True,
+                'no_warnings': True,
+                'socket_timeout': 3600,
+                'retries': 5,
+                'age_limit': 99,
+                'extractor_args': age_bypass_args,
+                'http_headers': common_headers,
+            }
+
+        if os.path.exists('cookies.txt'):
+            ydl_opts['cookiefile'] = 'cookies.txt'
+
+        # First get playlist info for the title
+        info_opts = dict(ydl_opts)
+        info_opts['skip_download'] = True
+        playlist_title = 'playlist'
+        try:
+            with yt_dlp.YoutubeDL(info_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    playlist_title = info.get('title') or info.get('playlist_title') or 'playlist'
+                    playlist_title = re.sub(r'[\\/*?:"<>|]', '', playlist_title)[:40]
+        except Exception:
+            pass
+
+        # Download all videos
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        # Find downloaded files
+        ext_filter = '.mp3' if download_format == 'audio' else '.mp4'
+        files = [f for f in os.listdir(output_dir) if f.endswith(ext_filter)]
+        files.sort()
+
+        if not files:
+            # Try any media file
+            files = [f for f in os.listdir(output_dir) if not f.endswith('.part')]
+            files.sort()
+
+        if not files:
+            return jsonify({'error': 'لم يتم تحميل أي ملفات من البلاي ليست'}), 500
+
+        # Zip all downloaded files
+        zip_filename = f'{playlist_title}_{unique_id}.zip'
+        zip_path = os.path.join(UPLOAD_FOLDER, zip_filename)
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for fname in files:
+                fpath = os.path.join(output_dir, fname)
+                zf.write(fpath, fname)
+
+        final_zip = zip_path
+
+        @after_this_request
+        def cleanup_playlist(response):
+            try:
+                import shutil
+                if output_dir and os.path.exists(output_dir):
+                    shutil.rmtree(output_dir, ignore_errors=True)
+                safe_remove_file(final_zip)
+            except Exception:
+                pass
+            return response
+
+        duration_ms = int((time.time() - start_time) * 1000)
+        log_activity('playlist_download', 'download', 'success',
+                     duration_ms=duration_ms,
+                     details=json.dumps({'format': download_format, 'files': len(files)}))
+
+        return send_file(
+            zip_path,
+            as_attachment=True,
+            download_name=f'{playlist_title}.zip',
+            mimetype='application/zip'
+        )
+
+    except yt_dlp.utils.DownloadError as e:
+        if output_dir and os.path.exists(output_dir):
+            import shutil; shutil.rmtree(output_dir, ignore_errors=True)
+        safe_remove_file(zip_path)
+        return jsonify({'error': f'خطأ في التحميل: {str(e)[:150]}'}), 400
+    except Exception as e:
+        if output_dir and os.path.exists(output_dir):
+            import shutil; shutil.rmtree(output_dir, ignore_errors=True)
+        safe_remove_file(zip_path)
+        logging.error(f'[DownloadPlaylist] {e}')
+        return jsonify({'error': f'خطأ غير متوقع: {str(e)[:120]}'}), 500
+
+
 @app.route('/download-video', methods=['POST'])
 def download_video():
     start_time = time.time()
