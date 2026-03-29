@@ -30,12 +30,23 @@ from models import db, AdminUser, AIProviderState, AIUsageLog, DailyStats, Activ
 from services.ai_providers import ai_manager, AIProviderError, RateLimitError, ProviderNotConfiguredError
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
-# هذا يحمي حسابك بدلاً من رفع الملف على GitHub
 cookie_content = os.environ.get('COOKIE_CONTENT')
 if cookie_content:
-    with open('cookies.txt', 'w') as f:
-        f.write(cookie_content)
-    print("✅ Cookies file created successfully from environment variables.")
+    try:
+        # Fix escaped newlines that happen when pasting multi-line content into env vars
+        # Handles: \n → actual newline, \\n → actual newline, \t → actual tab
+        cookie_content = cookie_content.replace('\\n', '\n').replace('\\t', '\t')
+        # Remove any carriage returns (Windows line endings)
+        cookie_content = cookie_content.replace('\r\n', '\n').replace('\r', '\n')
+        # Ensure the file starts with the Netscape header if not already present
+        if not cookie_content.strip().startswith('# Netscape') and not cookie_content.strip().startswith('#'):
+            cookie_content = '# Netscape HTTP Cookie File\n' + cookie_content
+        with open('cookies.txt', 'w', encoding='utf-8', newline='\n') as f:
+            f.write(cookie_content.strip() + '\n')
+        lines = [l for l in cookie_content.strip().splitlines() if l and not l.startswith('#')]
+        print(f"✅ Cookies file created successfully ({len(lines)} cookie entries).")
+    except Exception as e:
+        print(f"⚠️ Warning: Failed to write cookies file: {e}")
 else:
     print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
 # -------------------------------------------------------
