@@ -168,8 +168,7 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "skip_unavailable_fragments": True,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["android", "web"],
-                        "skip": ["dash", "hls"],
+                        "player_client": ["ios", "android", "mweb"],
                     }
                 },
                 "http_headers": {
@@ -856,6 +855,11 @@ def video_info():
             'cookies.txt' if os.path.exists('cookies.txt') else None,
             'socket_timeout': 1800,
             'retries': 3,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['ios', 'android', 'mweb'],
+                }
+            },
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -1036,8 +1040,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'retries': 10,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
-                    'skip': ['dash', 'hls'],
+                    'player_client': ['ios', 'android', 'mweb'],
                 }
             },
             'postprocessors': [{
@@ -2522,6 +2525,11 @@ def download_video():
             'socket_timeout': 1800,
             'noplaylist': True,
             'retries': 3,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['ios', 'android', 'mweb'],
+                }
+            },
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -3189,8 +3197,7 @@ def transcribe_video():
                 10485760,
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['android', 'web'],
-                        'skip': ['dash', 'hls'],
+                        'player_client': ['ios', 'android', 'mweb'],
                     }
                 },
                 'http_headers': {
