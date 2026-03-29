@@ -168,7 +168,7 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "skip_unavailable_fragments": True,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["android_vr", "ios", "android"],
+                        "player_client": ["tv_embedded", "web_creator", "android_vr", "ios", "android", "web"],
                     }
                 },
                 "http_headers": {
@@ -857,7 +857,7 @@ def video_info():
             'retries': 3,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android_vr', 'ios', 'android'],
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                 }
             },
             'http_headers': {
@@ -1040,7 +1040,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'retries': 10,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android_vr', 'ios', 'android'],
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                 }
             },
             'postprocessors': [{
@@ -1071,7 +1071,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'retries': 10,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android_vr', 'ios', 'android'],
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                 }
             },
             'http_headers': {
@@ -2526,7 +2526,7 @@ def download_video():
             'retries': 3,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android_vr', 'ios', 'android'],
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                 }
             },
             'http_headers': {
@@ -2842,8 +2842,8 @@ def download_video():
             return jsonify(
                 {'error':
                  'هذا الفيديو محمي بحقوق النشر ولا يمكن تحميله.'}), 400
-        elif 'age' in error_msg or 'sign in' in error_msg:
-            return jsonify({'error': 'هذا الفيديو يتطلب تسجيل الدخول.'}), 400
+        elif 'age' in error_msg or 'sign in' in error_msg or 'login' in error_msg:
+            return jsonify({'error': 'هذا الفيديو مقيد بالعمر أو محمي. جرب رابطاً مختلفاً.'}), 400
         else:
             return jsonify({'error': f'خطأ في التحميل: {str(e)[:100]}'}), 400
     except Exception as e:
@@ -2949,7 +2949,7 @@ def transcribe_video():
                 10485760,
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['android_vr', 'ios', 'android'],
+                        'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
                     }
                 },
                 'http_headers': {
@@ -2994,9 +2994,18 @@ def transcribe_video():
                     elif 'unavailable' in error_msg or 'removed' in error_msg or 'deleted' in error_msg:
                         return jsonify(
                             {'error': 'الفيديو غير متاح أو تم حذفه.'}), 400
-                    elif 'age' in error_msg or 'sign in' in error_msg:
-                        return jsonify(
-                            {'error': 'هذا الفيديو يتطلب تسجيل الدخول.'}), 400
+                    elif 'age' in error_msg or 'sign in' in error_msg or 'login' in error_msg:
+                        # Try switching player client on next attempt instead of giving up
+                        logging.warning(f"Age/login restriction attempt {attempt + 1}, retrying with alternate client...")
+                        alt_clients = [['tv_embedded'], ['mweb'], ['web_creator'], ['android_vr']]
+                        if attempt < len(alt_clients):
+                            ydl_opts['extractor_args'] = {'youtube': {'player_client': alt_clients[attempt]}}
+                        if attempt < max_download_attempts - 1:
+                            import time
+                            time.sleep(2)
+                            continue
+                        else:
+                            return jsonify({'error': 'هذا الفيديو محمي أو مقيد. حاول رابطاً آخر.'}), 400
                     else:
                         logging.warning(
                             f"Download attempt {attempt + 1} failed: {str(e)[:100]}"
