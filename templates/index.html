@@ -25,6 +25,9 @@
 
         html {
             overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         body {
@@ -32,9 +35,11 @@
             min-height: 100vh;
             position: relative;
             -webkit-touch-callout: none;
-            touch-action: manipulation;
-            overscroll-behavior: none;
+            touch-action: pan-y pinch-zoom;
+            overscroll-behavior-x: none;
             overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         body::before {
@@ -258,6 +263,8 @@
             width: 100%;
             max-width: 100vw;
             overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         #main-app {
@@ -1022,13 +1029,24 @@
                 background: rgba(99, 102, 241, 0.2);
             }
 
-            /* Mobile: Prevent horizontal scroll */
+            /* Mobile: Fix scroll */
             .main-content {
                 overflow-x: hidden;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             body {
                 overflow-x: hidden;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                touch-action: pan-y pinch-zoom;
+            }
+
+            #tool-view, #main-app, #tools-hub {
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+                min-height: auto;
             }
 
             /* Speech tool: Stack mic buttons vertically using helper class */
