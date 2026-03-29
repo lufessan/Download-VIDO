@@ -166,9 +166,11 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "http_chunk_size": 10485760,
                 "allow_unplayable_formats": True,
                 "skip_unavailable_fragments": True,
+                "age_limit": 99,
                 "extractor_args": {
                     "youtube": {
                         "player_client": ["tv_embedded", "web_creator", "android_vr", "ios", "android", "web"],
+                        "skip": ["hls", "dash"],
                     }
                 },
                 "http_headers": {
@@ -1161,9 +1163,11 @@ def video_info():
             'cookies.txt' if os.path.exists('cookies.txt') else None,
             'socket_timeout': 1800,
             'retries': 3,
+            'age_limit': 99,
             'extractor_args': {
                 'youtube': {
                     'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
+                    'skip': ['hls', 'dash'],
                 }
             },
             'http_headers': {
@@ -1242,6 +1246,13 @@ def get_video_formats():
             'noplaylist': True,
             'socket_timeout': 1800,
             'retries': 3,
+            'age_limit': 99,
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
+                    'skip': ['hls', 'dash'],
+                }
+            },
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             },
@@ -2838,17 +2849,21 @@ def download_video():
         else:
             output_file = f'{output_template}.mp4'
 
+        age_bypass_extractor_args = {
+            'youtube': {
+                'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
+                'skip': ['hls', 'dash'],
+            }
+        }
+
         info_opts = {
             'quiet': True,
             'no_warnings': True,
             'socket_timeout': 1800,
             'noplaylist': True,
             'retries': 3,
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                }
-            },
+            'age_limit': 99,
+            'extractor_args': age_bypass_extractor_args,
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -2912,6 +2927,8 @@ def download_video():
                 7200,
                 'retries':
                 5,
+                'age_limit': 99,
+                'extractor_args': age_bypass_extractor_args,
                 'http_headers':
                 common_headers,
                 'postprocessors': [{
@@ -2985,6 +3002,8 @@ def download_video():
                     5,
                     'fragment_retries':
                     5,
+                    'age_limit': 99,
+                    'extractor_args': age_bypass_extractor_args,
                     'http_headers':
                     common_headers,
                     'postprocessors': [{
@@ -3163,7 +3182,7 @@ def download_video():
                 {'error':
                  'هذا الفيديو محمي بحقوق النشر ولا يمكن تحميله.'}), 400
         elif 'age' in error_msg or 'sign in' in error_msg or 'login' in error_msg:
-            return jsonify({'error': 'هذا الفيديو مقيد بالعمر أو محمي. جرب رابطاً مختلفاً.'}), 400
+            return jsonify({'error': 'هذا الفيديو مقيد بالعمر ويتطلب تسجيل دخول يوتيوب. أضف ملف الكوكيز (COOKIE_CONTENT) في إعدادات السيرفر لتفعيل التحميل.'}), 400
         else:
             return jsonify({'error': f'خطأ في التحميل: {str(e)[:100]}'}), 400
     except Exception as e:
