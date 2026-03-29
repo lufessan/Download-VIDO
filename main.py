@@ -168,7 +168,7 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "skip_unavailable_fragments": True,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["ios", "android", "mweb"],
+                        "player_client": ["android_vr", "ios", "android"],
                     }
                 },
                 "http_headers": {
@@ -857,7 +857,7 @@ def video_info():
             'retries': 3,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'mweb'],
+                    'player_client': ['android_vr', 'ios', 'android'],
                 }
             },
             'http_headers': {
@@ -1040,7 +1040,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'retries': 10,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'mweb'],
+                    'player_client': ['android_vr', 'ios', 'android'],
                 }
             },
             'postprocessors': [{
@@ -1071,8 +1071,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             'retries': 10,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['android', 'web'],
-                    'skip': ['dash', 'hls'],
+                    'player_client': ['android_vr', 'ios', 'android'],
                 }
             },
             'http_headers': {
@@ -2527,7 +2526,7 @@ def download_video():
             'retries': 3,
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['ios', 'android', 'mweb'],
+                    'player_client': ['android_vr', 'ios', 'android'],
                 }
             },
             'http_headers': {
@@ -3197,7 +3196,7 @@ def transcribe_video():
                 10485760,
                 'extractor_args': {
                     'youtube': {
-                        'player_client': ['ios', 'android', 'mweb'],
+                        'player_client': ['android_vr', 'ios', 'android'],
                     }
                 },
                 'http_headers': {
