@@ -2987,6 +2987,10 @@ def cleanup_download_files(output_template, output_file):
     safe_remove_file(output_file)
 
 
+@app.route('/api/version')
+def api_version():
+    return jsonify({'version': 'v2-format-fix', 'timestamp': '2026-03-30', 'yt_dlp_version': getattr(yt_dlp, 'version', {}).get('__version__', 'unknown') if hasattr(yt_dlp, 'version') else yt_dlp.version.__version__ if hasattr(yt_dlp, 'version') else 'unknown'})
+
 @app.route('/cookie-check', methods=['POST'])
 @login_required
 def cookie_check():
@@ -3073,20 +3077,36 @@ def estimate_size():
 
         info = None
         last_error = None
-        for attempt in range(2):
+        format_attempts = [
+            'bestvideo*+bestaudio*/best*',
+            'best*',
+            'best',
+            None,
+        ]
+        for fmt in format_attempts:
             try:
+                if fmt is not None:
+                    ydl_opts['format'] = fmt
+                elif 'format' in ydl_opts:
+                    del ydl_opts['format']
+                logging.info(f"[EstimateSize] Trying format: {fmt}")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
                 if info:
+                    logging.info(f"[EstimateSize] Success with format: {fmt}")
                     break
             except yt_dlp.utils.DownloadError as e:
                 last_error = str(e)
+                logging.warning(f"[EstimateSize] Format {fmt} failed: {last_error[:100]}")
                 if 'Sign in' in last_error or 'bot' in last_error.lower():
                     ydl_opts['extractor_args']['youtube']['player_client'] = ['android_vr', 'ios', 'tv_embedded']
+                    continue
+                if 'Requested format is not available' in last_error:
                     continue
                 break
             except Exception as e:
                 last_error = str(e)
+                logging.error(f"[EstimateSize] Unexpected error with format {fmt}: {last_error[:100]}")
                 break
 
         if not info:
@@ -3506,8 +3526,11 @@ def download_video():
 
         download_success = False
         last_dl_error = None
-        for dl_attempt in range(3):
+        fallback_formats = ['bestvideo*+bestaudio*/best*', 'best*', 'best']
+        fallback_idx = 0
+        for dl_attempt in range(4):
             try:
+                logging.info(f"[Download] Attempt {dl_attempt+1} with format: {ydl_opts.get('format', 'default')}")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
                 download_success = True
@@ -3516,15 +3539,15 @@ def download_video():
                 last_dl_error = str(e)
                 logging.warning(f'[Download] Attempt {dl_attempt+1} failed: {last_dl_error[:100]}')
                 if 'Requested format is not available' in last_dl_error:
-                    # Fallback to most permissive format using wildcards
-                    ydl_opts['format'] = 'bestvideo*+bestaudio*/best*'
-                    if 'postprocessors' not in ydl_opts:
-                        ydl_opts['postprocessors'] = []
-                    if download_format == 'video':
-                        ydl_opts['merge_output_format'] = 'mp4'
-                    continue
+                    if fallback_idx < len(fallback_formats):
+                        ydl_opts['format'] = fallback_formats[fallback_idx]
+                        fallback_idx += 1
+                        if download_format == 'video':
+                            ydl_opts['merge_output_format'] = 'mp4'
+                        continue
+                    break
                 elif 'Sign in' in last_dl_error or 'bot' in last_dl_error.lower():
-                    break  # No point retrying without cookies
+                    break
                 else:
                     break
             except Exception as e:
