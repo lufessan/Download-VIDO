@@ -2963,6 +2963,8 @@ def estimate_size():
         if not url:
             return jsonify({'error': 'الرجاء إدخال رابط'}), 400
 
+        has_cookies_est = os.path.exists('cookies.txt')
+        # Never skip HLS/DASH — age-restricted videos are ONLY available via HLS/DASH
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
@@ -2977,7 +2979,6 @@ def estimate_size():
             'extractor_args': {
                 'youtube': {
                     'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'mweb', 'web'],
-                    'skip': ['hls', 'dash'],
                 }
             },
             'http_headers': {
@@ -2987,7 +2988,7 @@ def estimate_size():
                 'Referer': 'https://www.youtube.com/',
             },
         }
-        if os.path.exists('cookies.txt'):
+        if has_cookies_est:
             ydl_opts['cookiefile'] = 'cookies.txt'
 
         info = None
@@ -3001,7 +3002,6 @@ def estimate_size():
             except yt_dlp.utils.DownloadError as e:
                 last_error = str(e)
                 if 'Sign in' in last_error or 'bot' in last_error.lower():
-                    # Try with a different player client on second attempt
                     ydl_opts['extractor_args']['youtube']['player_client'] = ['android_vr', 'ios', 'tv_embedded']
                     continue
                 break
@@ -3268,19 +3268,13 @@ def download_video():
 
         has_cookies = os.path.exists('cookies.txt')
 
-        # When cookies are available, don't skip HLS/DASH — age-restricted videos need them
+        # Never skip HLS/DASH — age-restricted videos are only available via HLS/DASH
         age_bypass_extractor_args = {
             'youtube': {
                 'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
             }
         }
-        # Without cookies, skip HLS/DASH to avoid bot-detection formats
-        age_bypass_extractor_args_no_cookies = {
-            'youtube': {
-                'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'web'],
-                'skip': ['hls', 'dash'],
-            }
-        }
+        age_bypass_extractor_args_no_cookies = age_bypass_extractor_args
 
         info_opts = {
             'quiet': True,
@@ -3344,7 +3338,7 @@ def download_video():
 
         if download_format == 'audio':
             ydl_opts = {
-                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio[ext=opus]/bestaudio/best',
+                'format': 'bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio[ext=opus]/bestaudio*/best',
                 'outtmpl': output_template + '.%(ext)s',
                 'noplaylist': True,
                 'quiet': True,
@@ -3397,14 +3391,13 @@ def download_video():
                 if cookiefile_opt:
                     ydl_opts['cookiefile'] = cookiefile_opt
             else:
-                # YouTube and other sites — very permissive format chain
+                # YouTube and other sites — wildcard format chain that always succeeds
                 ydl_opts = {
                     'format': (
                         'bestvideo[ext=mp4]+bestaudio[ext=m4a]/'
                         'bestvideo[ext=mp4]+bestaudio/'
-                        'bestvideo+bestaudio[ext=m4a]/'
-                        'bestvideo+bestaudio/'
-                        'best[ext=mp4]/best'
+                        'bestvideo*+bestaudio*/'
+                        'best*'
                     ),
                     'merge_output_format': 'mp4',
                     'outtmpl': output_template + '.%(ext)s',
@@ -3444,8 +3437,8 @@ def download_video():
                 last_dl_error = str(e)
                 logging.warning(f'[Download] Attempt {dl_attempt+1} failed: {last_dl_error[:100]}')
                 if 'Requested format is not available' in last_dl_error:
-                    # Fallback to most permissive format
-                    ydl_opts['format'] = 'bestvideo+bestaudio/best'
+                    # Fallback to most permissive format using wildcards
+                    ydl_opts['format'] = 'bestvideo*+bestaudio*/best*'
                     if 'postprocessors' not in ydl_opts:
                         ydl_opts['postprocessors'] = []
                     if download_format == 'video':
