@@ -22,3 +22,8 @@ SpeechRecognition
 sqlalchemy
 werkzeug
 yt-dlp>=2025.01.01
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary
