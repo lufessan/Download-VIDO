@@ -33,6 +33,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
+COOKIES_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cookies.txt')
 cookie_content = os.environ.get('COOKIE_CONTENT')
 if cookie_content:
     try:
@@ -40,21 +41,28 @@ if cookie_content:
         cookie_content = cookie_content.replace('\r\n', '\n').replace('\r', '\n')
         if not cookie_content.strip().startswith('# Netscape') and not cookie_content.strip().startswith('#'):
             cookie_content = '# Netscape HTTP Cookie File\n' + cookie_content
-        with open('cookies.txt', 'w', encoding='utf-8', newline='\n') as f:
+        with open(COOKIES_FILE_PATH, 'w', encoding='utf-8', newline='\n') as f:
             f.write(cookie_content.strip() + '\n')
         lines = [l for l in cookie_content.strip().splitlines() if l and not l.startswith('#')]
-        logging.info(f"[Cookies] File created successfully ({len(lines)} cookie entries).")
-        if os.path.exists('cookies.txt'):
-            fsize = os.path.getsize('cookies.txt')
-            logging.info(f"[Cookies] Verified on disk: {fsize} bytes, {len(lines)} data lines")
+        logging.info(f"[Cookies] File created at: {COOKIES_FILE_PATH}")
+        logging.info(f"[Cookies] {len(lines)} cookie entries, working dir: {os.getcwd()}")
+        if os.path.exists(COOKIES_FILE_PATH):
+            fsize = os.path.getsize(COOKIES_FILE_PATH)
+            logging.info(f"[Cookies] Verified on disk: {fsize} bytes")
+            with open(COOKIES_FILE_PATH, 'r') as f:
+                first_lines = f.readlines()[:3]
+                for i, line in enumerate(first_lines):
+                    logging.info(f"[Cookies] Line {i+1}: {line.strip()[:80]}")
+            youtube_lines = [l for l in cookie_content.strip().splitlines() if '.youtube.com' in l or '.google.com' in l]
+            logging.info(f"[Cookies] YouTube/Google cookie lines: {len(youtube_lines)}")
         else:
             logging.error("[Cookies] File was written but NOT found on disk!")
     except Exception as e:
         logging.error(f"[Cookies] Failed to write cookies file: {e}")
 else:
     logging.warning("[Cookies] COOKIE_CONTENT not found in environment variables.")
-    if os.path.exists('cookies.txt'):
-        fsize = os.path.getsize('cookies.txt')
+    if os.path.exists(COOKIES_FILE_PATH):
+        fsize = os.path.getsize(COOKIES_FILE_PATH)
         logging.info(f"[Cookies] However, cookies.txt already exists on disk: {fsize} bytes")
 # -------------------------------------------------------
 
@@ -205,8 +213,8 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
             }
             
             # Add cookies file if available (critical for bypassing YouTube restrictions)
-            if os.path.exists('cookies.txt'):
-                ydl_opts['cookiefile'] = 'cookies.txt'
+            if os.path.exists(COOKIES_FILE_PATH):
+                ydl_opts['cookiefile'] = COOKIES_FILE_PATH
                 logger.info("Using cookies.txt for YouTube authentication")
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -1267,7 +1275,7 @@ def video_info():
             'noplaylist': True,
             'force_generic_extractor': False,
             'cookiefile':
-            'cookies.txt' if os.path.exists('cookies.txt') else None,
+            COOKIES_FILE_PATH if os.path.exists(COOKIES_FILE_PATH) else None,
             'socket_timeout': 1800,
             'retries': 3,
             'age_limit': 99,
@@ -1365,8 +1373,8 @@ def get_video_formats():
             },
         }
 
-        if os.path.exists('cookies.txt'):
-            ydl_opts['cookiefile'] = 'cookies.txt'
+        if os.path.exists(COOKIES_FILE_PATH):
+            ydl_opts['cookiefile'] = COOKIES_FILE_PATH
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -1503,8 +1511,8 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
             },
         }
 
-    if os.path.exists('cookies.txt'):
-        ydl_opts['cookiefile'] = 'cookies.txt'
+    if os.path.exists(COOKIES_FILE_PATH):
+        ydl_opts['cookiefile'] = COOKIES_FILE_PATH
 
     logging.info(f"بدء تحميل {download_type} بجودة {quality}")
     
@@ -2957,6 +2965,50 @@ def cleanup_download_files(output_template, output_file):
     safe_remove_file(output_file)
 
 
+@app.route('/cookie-check', methods=['POST'])
+@login_required
+def cookie_check():
+    """Admin-only: Test if cookies work with a simple YouTube request."""
+    try:
+        test_url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        result = {
+            'cookie_file_exists': os.path.exists(COOKIES_FILE_PATH),
+            'cookie_file_path': COOKIES_FILE_PATH,
+            'working_dir': os.getcwd(),
+        }
+        if os.path.exists(COOKIES_FILE_PATH):
+            fsize = os.path.getsize(COOKIES_FILE_PATH)
+            with open(COOKIES_FILE_PATH, 'r') as f:
+                content = f.read()
+                data_lines = [l for l in content.splitlines() if l.strip() and not l.startswith('#')]
+                yt_lines = [l for l in content.splitlines() if '.youtube.com' in l or '.google.com' in l]
+            result['cookie_file_size'] = fsize
+            result['total_data_lines'] = len(data_lines)
+            result['youtube_google_lines'] = len(yt_lines)
+            result['starts_with_netscape'] = content.strip().startswith('# Netscape') or content.strip().startswith('# HTTP Cookie')
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'skip_download': True,
+                'cookiefile': COOKIES_FILE_PATH,
+                'socket_timeout': 15,
+                'extractor_args': {'youtube': {'player_client': ['tv_embedded', 'web_creator']}},
+            }
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(test_url, download=False)
+                result['youtube_test'] = 'SUCCESS'
+                result['video_title'] = info.get('title', 'N/A')
+            except Exception as e:
+                result['youtube_test'] = 'FAILED'
+                result['youtube_error'] = str(e)[:200]
+        else:
+            result['youtube_test'] = 'SKIPPED - no cookie file'
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/estimate-size', methods=['POST'])
 def estimate_size():
     """Estimate file size for a video or playlist before downloading."""
@@ -2966,7 +3018,7 @@ def estimate_size():
         if not url:
             return jsonify({'error': 'الرجاء إدخال رابط'}), 400
 
-        has_cookies_est = os.path.exists('cookies.txt')
+        has_cookies_est = os.path.exists(COOKIES_FILE_PATH)
         # Never skip HLS/DASH — age-restricted videos are ONLY available via HLS/DASH
         ydl_opts = {
             'quiet': True,
@@ -2992,7 +3044,10 @@ def estimate_size():
             },
         }
         if has_cookies_est:
-            ydl_opts['cookiefile'] = 'cookies.txt'
+            ydl_opts['cookiefile'] = COOKIES_FILE_PATH
+            logging.info(f"[EstimateSize] Using cookies from: {COOKIES_FILE_PATH} (size: {os.path.getsize(COOKIES_FILE_PATH)} bytes)")
+        else:
+            logging.warning(f"[EstimateSize] No cookies file found at: {COOKIES_FILE_PATH}")
 
         info = None
         last_error = None
@@ -3164,8 +3219,8 @@ def download_playlist():
                 'http_headers': common_headers,
             }
 
-        if os.path.exists('cookies.txt'):
-            ydl_opts['cookiefile'] = 'cookies.txt'
+        if os.path.exists(COOKIES_FILE_PATH):
+            ydl_opts['cookiefile'] = COOKIES_FILE_PATH
 
         # First get playlist info for the title
         info_opts = dict(ydl_opts)
@@ -3273,7 +3328,7 @@ def download_video():
         else:
             output_file = f'{output_template}.mp4'
 
-        has_cookies = os.path.exists('cookies.txt')
+        has_cookies = os.path.exists(COOKIES_FILE_PATH)
 
         # Never skip HLS/DASH — age-restricted videos are only available via HLS/DASH
         age_bypass_extractor_args = {
@@ -3304,7 +3359,7 @@ def download_video():
         }
 
         if has_cookies:
-            info_opts['cookiefile'] = 'cookies.txt'
+            info_opts['cookiefile'] = COOKIES_FILE_PATH
 
         with yt_dlp.YoutubeDL(info_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -3338,8 +3393,8 @@ def download_video():
             'Sec-Fetch-Mode': 'navigate',
         }
 
-        cookiefile_opt = 'cookies.txt' if os.path.exists(
-            'cookies.txt') else None
+        cookiefile_opt = COOKIES_FILE_PATH if os.path.exists(
+            COOKIES_FILE_PATH) else None
 
         dl_extractor_args = age_bypass_extractor_args if has_cookies else age_bypass_extractor_args_no_cookies
 
@@ -3755,8 +3810,8 @@ def transcribe_video():
                 }],
             }
 
-            if os.path.exists('cookies.txt'):
-                ydl_opts['cookiefile'] = 'cookies.txt'
+            if os.path.exists(COOKIES_FILE_PATH):
+                ydl_opts['cookiefile'] = COOKIES_FILE_PATH
 
             max_download_attempts = 5
             download_success = False

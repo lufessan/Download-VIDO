@@ -1,0 +1,50 @@
+2026-03-29T22:52:37.801242333Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-03-29T22:57:24.370801621Z ==> Deploying...
+2026-03-29T22:57:52.912311219Z [2026-03-29 22:57:52 +0000] [7] [INFO] Starting gunicorn 25.3.0
+2026-03-29T22:57:52.912538495Z [2026-03-29 22:57:52 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-29T22:57:52.912644628Z [2026-03-29 22:57:52 +0000] [7] [INFO] Using worker: gthread
+2026-03-29T22:57:52.915478226Z [2026-03-29 22:57:52 +0000] [25] [INFO] Booting worker with pid: 25
+2026-03-29T22:57:53.414692722Z [2026-03-29 22:57:53 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-29T22:57:56.46330497Z ==> Your service is live 🎉
+2026-03-29T22:57:56.5812982Z ==> 
+2026-03-29T22:57:56.584047683Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:57:56.586557164Z ==> 
+2026-03-29T22:57:56.589347279Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T22:57:56.592066221Z ==> 
+2026-03-29T22:57:56.59512924Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T22:58:01.150697802Z INFO:root:[DB] Database already initialized with 7 tables
+2026-03-29T22:58:01.366419903Z INFO:root:============================================================
+2026-03-29T22:58:01.366475315Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-29T22:58:01.366525516Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-29T22:58:01.366611728Z INFO:root:Groq provider configured: True
+2026-03-29T22:58:01.366671439Z INFO:root:HuggingFace provider configured: False
+2026-03-29T22:58:01.366678659Z INFO:root:============================================================
+2026-03-29T22:58:43.013173333Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T22:58:44.431405108Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T22:58:58.613396718Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T23:03:10.490532008Z ==> Detected service running on port 10000
+2026-03-29T23:03:10.723221526Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding
+2026-03-29T23:05:38.026835345Z ==> Deploying...
+2026-03-29T23:06:02.089113793Z [2026-03-29 23:06:02 +0000] [7] [INFO] Starting gunicorn 25.3.0
+2026-03-29T23:06:02.089419609Z [2026-03-29 23:06:02 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-29T23:06:02.089435349Z [2026-03-29 23:06:02 +0000] [7] [INFO] Using worker: gthread
+2026-03-29T23:06:02.092334713Z [2026-03-29 23:06:02 +0000] [26] [INFO] Booting worker with pid: 26
+2026-03-29T23:06:02.392541187Z [2026-03-29 23:06:02 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-29T23:06:07.496623403Z INFO:root:[Cookies] File created successfully (23 cookie entries).
+2026-03-29T23:06:07.496658693Z INFO:root:[Cookies] Verified on disk: 3188 bytes, 23 data lines
+2026-03-29T23:06:09.421672231Z ==> Your service is live 🎉
+2026-03-29T23:06:09.451493014Z INFO:root:[DB] Database already initialized with 7 tables
+2026-03-29T23:06:09.557573989Z ==> 
+2026-03-29T23:06:09.559565752Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T23:06:09.561437131Z ==> 
+2026-03-29T23:06:09.562945099Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T23:06:09.564767586Z ==> 
+2026-03-29T23:06:09.567041718Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T23:06:09.668970086Z INFO:root:============================================================
+2026-03-29T23:06:09.668995157Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-29T23:06:09.669009737Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-29T23:06:09.669087959Z INFO:root:Groq provider configured: True
+2026-03-29T23:06:09.66914124Z INFO:root:HuggingFace provider configured: False
+2026-03-29T23:06:09.66914942Z INFO:root:============================================================
+2026-03-29T23:07:22.095053815Z ERROR: [youtube] B4hp7F2W-Eg: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-29T23:07:22.373082745Z WARNING:root:[Download] Cookies present but age-restriction bypass failed. Cookies may be expired.
