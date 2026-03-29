@@ -795,6 +795,91 @@ def identify_anime_with_vision_llm(image_path: str) -> str | None:
         return None
 
 
+def identify_anime_with_groq_vision(image_path: str) -> str | None:
+    """
+    Use Groq Vision LLM (llama-4-scout or llama-3.2-vision) to identify anime.
+    Falls back through multiple vision models if one fails.
+    Requires GROQ_API_KEY.
+    """
+    groq_key = os.environ.get('GROQ_API_KEY', '').strip()
+    if not groq_key:
+        logging.info('[GroqVision] No GROQ_API_KEY configured. Skipping.')
+        return None
+
+    try:
+        from PIL import Image as PILImage
+        import base64, io as _io
+
+        img = PILImage.open(image_path).convert('RGB')
+        img.thumbnail((768, 768))
+        buf = _io.BytesIO()
+        img.save(buf, format='JPEG', quality=85)
+        img_b64 = base64.b64encode(buf.getvalue()).decode()
+
+        vision_models = [
+            'meta-llama/llama-4-scout-17b-16e-instruct',
+            'meta-llama/llama-4-maverick-17b-128e-instruct',
+            'llama-3.2-11b-vision-preview',
+            'llama-3.2-90b-vision-preview',
+        ]
+
+        headers = {
+            'Authorization': f'Bearer {groq_key}',
+            'Content-Type': 'application/json',
+        }
+
+        prompt_text = (
+            'You are an anime expert. Look at this image and identify which anime series, '
+            'movie, or OVA it is from.\n'
+            'If you recognize it, reply ONLY with the anime name (English or Romaji), nothing else.\n'
+            'If you cannot identify it at all, reply UNKNOWN.'
+        )
+
+        for model in vision_models:
+            try:
+                payload = {
+                    'model': model,
+                    'messages': [{
+                        'role': 'user',
+                        'content': [
+                            {'type': 'image_url', 'image_url': {'url': f'data:image/jpeg;base64,{img_b64}'}},
+                            {'type': 'text', 'text': prompt_text},
+                        ]
+                    }],
+                    'max_tokens': 80,
+                    'temperature': 0.1,
+                }
+                resp = requests.post(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    headers=headers,
+                    json=payload,
+                    timeout=30,
+                )
+                if resp.status_code == 200:
+                    answer = resp.json()['choices'][0]['message']['content'].strip().strip('"').strip("'")
+                    logging.info(f'[GroqVision] {model} identified: {answer!r}')
+                    if not answer or answer.upper() == 'UNKNOWN' or len(answer) < 2:
+                        return None
+                    for noise in ['I cannot', "I don't", 'cannot identify', 'not sure', 'unknown', 'Sorry', 'I\'m not']:
+                        if noise.lower() in answer.lower():
+                            return None
+                    return answer
+                elif resp.status_code in (400, 404):
+                    logging.info(f'[GroqVision] Model {model} not available ({resp.status_code}), trying next.')
+                    continue
+                else:
+                    logging.warning(f'[GroqVision] {model} returned {resp.status_code}: {resp.text[:200]}')
+            except Exception as model_err:
+                logging.warning(f'[GroqVision] {model} error: {model_err}')
+                continue
+
+        return None
+
+    except Exception as e:
+        logging.warning(f'[GroqVision] Error: {type(e).__name__}: {str(e)[:200]}')
+        return None
+
+
 def identify_anime_with_gemini(image_path):
     """Use Gemini AI Vision to identify anime from image (legacy, may be unavailable)"""
     prompt = """Analyze this anime screenshot or image carefully.
@@ -1740,10 +1825,13 @@ def search_anime():
 
         from urllib.parse import quote
 
-        # Priority 1: Qwen3-VL Vision LLM (works with any image type)
+        # Priority 1: Qwen3-VL Vision LLM via HuggingFace (works with any image type)
         vision_result = identify_anime_with_vision_llm(temp_path)
         if not vision_result:
-            # Priority 2: Gemini Vision (legacy fallback)
+            # Priority 2: Groq Vision LLM (llama-4-scout / llama-3.2-vision)
+            vision_result = identify_anime_with_groq_vision(temp_path)
+        if not vision_result:
+            # Priority 3: HuggingFace VQA fallback (legacy)
             vision_result = identify_anime_with_gemini(temp_path)
 
         gemini_result = vision_result
@@ -1805,41 +1893,69 @@ def search_anime():
                                      files={'image': f},
                                      timeout=30)
 
-        if response.status_code != 200:
+        trace_moe_ok = False
+        top_result = None
+        similarity = 0
+
+        if response.status_code == 200:
+            data = response.json()
+            if not data.get('error'):
+                results = data.get('result', [])
+                if results:
+                    top_result = results[0]
+                    similarity = top_result.get('similarity', 0)
+                    if similarity >= ANIME_SIMILARITY_THRESHOLD:
+                        trace_moe_ok = True
+
+        if not trace_moe_ok:
+            # Fallback: try IQDB (free, no key needed, anime-focused)
+            logging.info('[AnimeSearch] trace.moe did not produce confident result. Trying IQDB fallback.')
+            iqdb_result = search_anime_with_iqdb(temp_path)
+            if iqdb_result:
+                safe_remove_file(temp_path)
+                anime_name = iqdb_result['anime_name']
+                jikan = get_anime_details_from_jikan(anime_name)
+                from urllib.parse import quote as url_quote2
+                duration_ms = int((time.time() - start_time) * 1000)
+                log_activity('anime_detection_image', 'search', 'success', duration_ms=duration_ms,
+                            file_size=file_size, details=json.dumps({'method': 'iqdb', 'anime': anime_name}))
+                return jsonify({
+                    'found': True,
+                    'anime_name': jikan.get('title_en') or anime_name,
+                    'anime_name_jp': jikan.get('title_jp', ''),
+                    'episode': 'غير معروف',
+                    'similarity': iqdb_result['similarity'],
+                    'timestamp': '',
+                    'video_preview': '',
+                    'image_preview': jikan.get('image', ''),
+                    'detection_method': 'iqdb',
+                    'description': jikan.get('synopsis', ''),
+                    'score': jikan.get('score'),
+                    'episodes': jikan.get('episodes'),
+                    'genres': jikan.get('genres', []),
+                    'type': jikan.get('type', ''),
+                    'year': jikan.get('year'),
+                    'mal_url': jikan.get('url', ''),
+                    'search_links': {
+                        'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote2(anime_name)}",
+                        'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote2(anime_name)}",
+                        'youtube': f"https://www.youtube.com/results?search_query={url_quote2(anime_name + ' anime')}",
+                    }
+                })
+
+            # All methods failed
             safe_remove_file(temp_path)
+            if response.status_code != 200:
+                msg = 'لم يتم التعرف على الأنمي. جرب البحث بالاسم.'
+            elif top_result and similarity > 0:
+                msg = f'أقرب نتيجة بنسبة {round(similarity*100)}% — ثقة منخفضة جداً للتأكيد.'
+            else:
+                msg = 'لم يتم التعرف على الأنمي من هذه الصورة.'
             return jsonify({
                 'found': False,
-                'message': 'لم يتم التعرف على الأنمي. جرب البحث بالاسم.',
-                'suggest_search_by_name': True
-            })
-
-        data = response.json()
-
-        if data.get('error'):
-            safe_remove_file(temp_path)
-            return jsonify({'error': data['error']}), 400
-
-        results = data.get('result', [])
-
-        if not results:
-            safe_remove_file(temp_path)
-            return jsonify({
-                'found': False,
-                'message': 'لم يتم التعرف على الأنمي من هذه الصورة.',
+                'message': msg,
                 'suggest_search_by_name': True,
                 'hint': 'هذه الأداة تعمل بشكل أفضل مع لقطات الشاشة من الحلقات. للصور الفنية والترويجية، جرّب البحث بالوصف في التبويب الآخر.'
-            })
-
-        top_result = results[0]
-        similarity = top_result.get('similarity', 0)
-
-        if similarity < ANIME_SIMILARITY_THRESHOLD:
-            safe_remove_file(temp_path)
-            return jsonify({
-                'found': False,
-                'message': f'أقرب نتيجة بنسبة {round(similarity*100)}% — ثقة منخفضة جداً للتأكيد.',
-                'suggest_search_by_name': True,
-                'hint': 'هذه الأداة تعمل بشكل أفضل مع لقطات الشاشة من الحلقات. للصور الفنية جرّب البحث بالوصف.'
             })
 
         safe_remove_file(temp_path)
