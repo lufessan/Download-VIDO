@@ -1,0 +1,50 @@
+2026-03-29T23:05:12.124570956Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 38.80MB / 246.54MB 0.2s
+2026-03-29T23:05:12.274453815Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 70.25MB / 246.54MB 0.3s
+2026-03-29T23:05:12.439597865Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 108.67MB / 246.54MB 0.5s
+2026-03-29T23:05:12.574664361Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 137.36MB / 246.54MB 0.6s
+2026-03-29T23:05:12.739653728Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 175.11MB / 246.54MB 0.8s
+2026-03-29T23:05:12.874591352Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 206.57MB / 246.54MB 0.9s
+2026-03-29T23:05:13.039761763Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 241.17MB / 246.54MB 1.1s
+2026-03-29T23:05:14.053920058Z #11 sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 246.54MB / 246.54MB 2.1s done
+2026-03-29T23:05:14.21235551Z #11 extracting sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106
+2026-03-29T23:05:24.729816924Z #11 extracting sha256:af8b4fbf38eb8fad1b18ca496fa92c13ea7b8e91c2a72c04d23c793c01c35106 10.7s done
+2026-03-29T23:05:24.87009707Z #11 CACHED
+2026-03-29T23:05:24.87011782Z 
+2026-03-29T23:05:24.8701232Z #12 [6/6] COPY . .
+2026-03-29T23:05:24.87012761Z #12 DONE 0.1s
+2026-03-29T23:05:25.025038185Z 
+2026-03-29T23:05:25.025058966Z #13 exporting to docker image format
+2026-03-29T23:05:25.025062706Z #13 exporting layers
+2026-03-29T23:05:25.459634335Z #13 exporting layers 0.6s done
+2026-03-29T23:05:25.639514067Z #13 exporting manifest sha256:d8f09ca8979b28406ad4e2fc7ab07670f9690a05634103d4afbcf1fcc338714d 0.0s done
+2026-03-29T23:05:25.639544517Z #13 exporting config sha256:ae855b5de158619af34a78db68273745a44a9451f52c0a06706259e87ad427b4 done
+2026-03-29T23:05:28.961309639Z #13 DONE 4.1s
+2026-03-29T23:05:28.96133265Z 
+2026-03-29T23:05:28.9613374Z #14 exporting cache to client directory
+2026-03-29T23:05:28.96134135Z #14 preparing build cache for export
+2026-03-29T23:05:29.239103029Z #14 writing cache image manifest sha256:32c9860e491a73986493d0e26907e88b6e353b96bddad9198e1574e7502560f5 done
+2026-03-29T23:05:29.239122399Z #14 DONE 0.2s
+2026-03-29T23:05:32.310841172Z Pushing image to registry...
+2026-03-29T23:05:35.074201203Z Upload succeeded
+2026-03-29T23:05:38.026835345Z ==> Deploying...
+2026-03-29T23:06:02.089113793Z [2026-03-29 23:06:02 +0000] [7] [INFO] Starting gunicorn 25.3.0
+2026-03-29T23:06:02.089419609Z [2026-03-29 23:06:02 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-29T23:06:02.089435349Z [2026-03-29 23:06:02 +0000] [7] [INFO] Using worker: gthread
+2026-03-29T23:06:02.092334713Z [2026-03-29 23:06:02 +0000] [26] [INFO] Booting worker with pid: 26
+2026-03-29T23:06:02.392541187Z [2026-03-29 23:06:02 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-29T23:06:07.496623403Z INFO:root:[Cookies] File created successfully (23 cookie entries).
+2026-03-29T23:06:07.496658693Z INFO:root:[Cookies] Verified on disk: 3188 bytes, 23 data lines
+2026-03-29T23:06:09.421672231Z ==> Your service is live 🎉
+2026-03-29T23:06:09.451493014Z INFO:root:[DB] Database already initialized with 7 tables
+2026-03-29T23:06:09.557573989Z ==> 
+2026-03-29T23:06:09.559565752Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T23:06:09.561437131Z ==> 
+2026-03-29T23:06:09.562945099Z ==> Available at your primary URL https://arkanai.site + 2 more domains
+2026-03-29T23:06:09.564767586Z ==> 
+2026-03-29T23:06:09.567041718Z ==> ///////////////////////////////////////////////////////////
+2026-03-29T23:06:09.668970086Z INFO:root:============================================================
+2026-03-29T23:06:09.668995157Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-29T23:06:09.669009737Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-29T23:06:09.669087959Z INFO:root:Groq provider configured: True
+2026-03-29T23:06:09.66914124Z INFO:root:HuggingFace provider configured: False
+2026-03-29T23:06:09.66914942Z INFO:root:============================================================
