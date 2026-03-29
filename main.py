@@ -2952,34 +2952,57 @@ def estimate_size():
         if not url:
             return jsonify({'error': 'الرجاء إدخال رابط'}), 400
 
-        age_bypass_args = {
-            'youtube': {
-                'player_client': ['tv_embedded', 'web_creator', 'ios', 'android', 'web'],
-                'skip': ['hls', 'dash'],
-            }
-        }
-        common_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        }
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
             'noplaylist': False,
             'socket_timeout': 30,
-            'retries': 2,
+            'retries': 3,
             'age_limit': 99,
-            'extractor_args': age_bypass_args,
-            'http_headers': common_headers,
+            'nocheckcertificate': True,
+            'geo_bypass': True,
+            'geo_bypass_country': 'US',
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['tv_embedded', 'web_creator', 'android_vr', 'ios', 'android', 'mweb', 'web'],
+                    'skip': ['hls', 'dash'],
+                }
+            },
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Referer': 'https://www.youtube.com/',
+            },
         }
         if os.path.exists('cookies.txt'):
             ydl_opts['cookiefile'] = 'cookies.txt'
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
+        info = None
+        last_error = None
+        for attempt in range(2):
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                if info:
+                    break
+            except yt_dlp.utils.DownloadError as e:
+                last_error = str(e)
+                if 'Sign in' in last_error or 'bot' in last_error.lower():
+                    # Try with a different player client on second attempt
+                    ydl_opts['extractor_args']['youtube']['player_client'] = ['android_vr', 'ios', 'tv_embedded']
+                    continue
+                break
+            except Exception as e:
+                last_error = str(e)
+                break
 
         if not info:
-            return jsonify({'error': 'لم يتم العثور على محتوى في هذا الرابط'}), 400
+            err_msg = last_error or 'لم يتم العثور على محتوى'
+            if 'Sign in' in (err_msg or '') or 'bot' in (err_msg or '').lower():
+                return jsonify({'error': 'يوتيوب يطلب تسجيل دخول لهذا الفيديو. يمكنك التحميل المباشر بدون حساب المساحة، أو أضف ملف كوكيز لتفعيل هذه الميزة.'}), 400
+            return jsonify({'error': f'خطأ في قراءة الرابط: {err_msg[:120]}'}), 400
 
         def format_size(bytes_val):
             if not bytes_val:

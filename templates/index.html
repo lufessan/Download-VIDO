@@ -4095,21 +4095,20 @@
                     <div class="space-y-6">
                         <div>
                             <label class="block text-slate-300 font-medium mb-2">رابط الفيديو أو البلاي ليست:</label>
-                            <div class="flex gap-2">
-                                <input type="text" id="downloader-url"
-                                    placeholder="https://www.youtube.com/watch?v=... أو رابط بلاي ليست"
-                                    class="w-full rounded-xl p-4"
-                                    oninput="onDownloaderUrlChange()">
+                            <input type="text" id="downloader-url"
+                                placeholder="https://www.youtube.com/watch?v=... أو رابط بلاي ليست"
+                                class="w-full rounded-xl p-4"
+                                oninput="onDownloaderUrlChange()">
+                            <div class="mt-2 flex justify-end">
                                 <button onclick="estimateDownloadSize()" id="estimate-size-btn"
-                                    title="حساب المساحة"
-                                    class="flex-shrink-0 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold flex items-center gap-2 hover:shadow-lg transition-all text-sm whitespace-nowrap">
-                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/20 border border-amber-500/40 text-amber-300 text-sm font-medium hover:bg-amber-500/30 transition-all">
+                                    <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-4 h-4">
                                         <rect x="8" y="8" width="48" height="48" rx="6" stroke="currentColor" stroke-width="2.5" fill="none"/>
                                         <path d="M20 20H44M20 32H36M20 44H28" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        <circle cx="46" cy="46" r="10" fill="#f59e0b"/>
-                                        <path d="M46 42V46L49 49" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                        <circle cx="46" cy="46" r="8" fill="#f59e0b"/>
+                                        <path d="M46 42V47M43.5 44.5H48.5" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
                                     </svg>
-                                    حساب المساحة
+                                    احسب المساحة قبل التحميل
                                 </button>
                             </div>
                         </div>
