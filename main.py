@@ -45,10 +45,18 @@ if cookie_content:
             f.write(cookie_content.strip() + '\n')
         lines = [l for l in cookie_content.strip().splitlines() if l and not l.startswith('#')]
         print(f"✅ Cookies file created successfully ({len(lines)} cookie entries).")
+        if os.path.exists('cookies.txt'):
+            fsize = os.path.getsize('cookies.txt')
+            print(f"✅ cookies.txt verified on disk: {fsize} bytes, {len(lines)} data lines")
+        else:
+            print("❌ ERROR: cookies.txt was written but NOT found on disk!")
     except Exception as e:
         print(f"⚠️ Warning: Failed to write cookies file: {e}")
 else:
     print("⚠️ Warning: COOKIE_CONTENT not found in environment variables.")
+    if os.path.exists('cookies.txt'):
+        fsize = os.path.getsize('cookies.txt')
+        print(f"ℹ️ However, cookies.txt already exists on disk: {fsize} bytes")
 # -------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO)
@@ -181,7 +189,6 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
                 "extractor_args": {
                     "youtube": {
                         "player_client": ["tv_embedded", "web_creator", "android_vr", "ios", "android", "web"],
-                        "skip": ["hls", "dash"],
                     }
                 },
                 "http_headers": {
@@ -3012,7 +3019,11 @@ def estimate_size():
         if not info:
             err_msg = last_error or 'لم يتم العثور على محتوى'
             if 'Sign in' in (err_msg or '') or 'bot' in (err_msg or '').lower():
-                return jsonify({'error': 'يوتيوب يطلب تسجيل دخول لهذا الفيديو. يمكنك التحميل المباشر بدون حساب المساحة، أو أضف ملف كوكيز لتفعيل هذه الميزة.'}), 400
+                if has_cookies_est:
+                    logging.warning(f'[EstimateSize] Cookies present but Sign-in still required. Cookie file may be expired.')
+                    return jsonify({'error': 'ملف الكوكيز موجود لكنه قد يكون منتهي الصلاحية أو غير صالح. يرجى تحديث ملف الكوكيز (COOKIE_CONTENT) بكوكيز جديدة من يوتيوب.'}), 400
+                else:
+                    return jsonify({'error': 'يوتيوب يطلب تسجيل دخول لهذا الفيديو. يمكنك التحميل المباشر بدون حساب المساحة، أو أضف ملف كوكيز لتفعيل هذه الميزة.'}), 400
             return jsonify({'error': f'خطأ في قراءة الرابط: {err_msg[:120]}'}), 400
 
         def format_size(bytes_val):
@@ -3621,7 +3632,11 @@ def download_video():
                 {'error':
                  'هذا الفيديو محمي بحقوق النشر ولا يمكن تحميله.'}), 400
         elif 'age' in error_msg or 'sign in' in error_msg or 'login' in error_msg:
-            return jsonify({'error': 'هذا الفيديو مقيد بالعمر ويتطلب تسجيل دخول يوتيوب. أضف ملف الكوكيز (COOKIE_CONTENT) في إعدادات السيرفر لتفعيل التحميل.'}), 400
+            if has_cookies:
+                logging.warning(f'[Download] Cookies present but age-restriction bypass failed. Cookies may be expired.')
+                return jsonify({'error': 'ملف الكوكيز موجود لكنه قد يكون منتهي الصلاحية أو غير صالح. يرجى تحديث ملف الكوكيز (COOKIE_CONTENT) بكوكيز جديدة من يوتيوب.'}), 400
+            else:
+                return jsonify({'error': 'هذا الفيديو مقيد بالعمر ويتطلب تسجيل دخول يوتيوب. أضف ملف الكوكيز (COOKIE_CONTENT) في إعدادات السيرفر لتفعيل التحميل.'}), 400
         else:
             return jsonify({'error': f'خطأ في التحميل: {str(e)[:100]}'}), 400
     except Exception as e:
