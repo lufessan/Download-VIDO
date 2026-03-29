@@ -3613,14 +3613,24 @@
                         </div>
 
                         <div id="anime-not-found"
-                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30 text-amber-400">
-                            <span class="icon-pharaonic icon-sm inline-flex ml-2"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px"><circle cx="32" cy="32" r="24" stroke="#fbbf24" stroke-width="2.5" fill="none"/><path d="M32 20V38M32 44V44.01" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/></svg></span>
-                            <span id="not-found-text"></span>
-                            <a href="https://lens.google.com/" target="_blank"
-                                class="block mt-2 text-purple-600 hover:underline">
-                                <span class="icon-pharaonic icon-sm inline-flex ml-1"><svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px"><path d="M32 12V8H52V28H48M12 36V56H32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M52 8L28 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span>
-                                جرب البحث في Google Lens
-                            </a>
+                            class="hidden p-4 rounded-xl bg-amber-900/20 border border-amber-500/30">
+                            <div class="flex items-start gap-2 text-amber-400 mb-3">
+                                <span class="mt-0.5">⚠️</span>
+                                <div>
+                                    <p id="not-found-text" class="font-medium mb-1"></p>
+                                    <p id="not-found-hint" class="text-amber-300/80 text-sm hidden"></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button onclick="setAnimeMode('name')"
+                                    class="text-sm px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 font-medium">
+                                    🔍 بحث بالوصف بدلاً
+                                </button>
+                                <a href="https://lens.google.com/" target="_blank"
+                                    class="text-sm px-4 py-2 rounded-lg bg-slate-700 text-slate-200 hover:bg-slate-600 font-medium">
+                                    🌐 Google Lens
+                                </a>
+                            </div>
                         </div>
 
                         <div id="anime-error"
@@ -5896,7 +5906,14 @@
 
                     resultDiv.classList.remove('hidden');
                 } else {
-                    document.getElementById('not-found-text').textContent = data.message || 'لم يتم التعرف على الأنمي. جرب البحث بالاسم.';
+                    document.getElementById('not-found-text').textContent = data.message || 'لم يتم التعرف على الأنمي.';
+                    const hintEl = document.getElementById('not-found-hint');
+                    if (data.hint) {
+                        hintEl.textContent = data.hint;
+                        hintEl.classList.remove('hidden');
+                    } else {
+                        hintEl.classList.add('hidden');
+                    }
                     notFoundDiv.classList.remove('hidden');
                 }
 

@@ -794,62 +794,211 @@ def identify_anime_by_description(description):
     return None
 
 
+def _resolve_anilist_id(anilist_id: int) -> str:
+    """Resolve an AniList ID to an anime name. Tries AniList first, then yuna.moe → Jikan as fallback."""
+    # 1) Try AniList GraphQL
+    try:
+        q = 'query($id:Int){Media(id:$id,type:ANIME){title{romaji english native}}}'
+        r = requests.post('https://graphql.anilist.co',
+                          json={'query': q, 'variables': {'id': anilist_id}},
+                          timeout=8)
+        if r.status_code == 200:
+            media = r.json().get('data', {}).get('Media', {})
+            t = media.get('title', {})
+            name = t.get('english') or t.get('romaji') or t.get('native')
+            if name:
+                return name
+    except Exception:
+        pass
+
+    # 2) Try yuna.moe to get MAL ID, then Jikan for title
+    try:
+        yr = requests.get(
+            f'https://relations.yuna.moe/api/v2/ids?source=anilist&id={anilist_id}',
+            timeout=8
+        )
+        if yr.status_code == 200:
+            mal_id = yr.json().get('myanimelist')
+            if mal_id:
+                jr = requests.get(f'https://api.jikan.moe/v4/anime/{mal_id}', timeout=8)
+                if jr.status_code == 200:
+                    jdata = jr.json().get('data', {})
+                    return (jdata.get('title_english') or
+                            jdata.get('title') or
+                            f'AniList#{anilist_id}')
+    except Exception:
+        pass
+
+    return f'AniList#{anilist_id}'
+
+
+def _build_anime_response(jikan: dict, fallback: dict, method: str) -> dict:
+    """Build a standard anime found response from jikan + fallback data."""
+    from urllib.parse import quote as url_quote
+    name = fallback['anime_name']
+    return {
+        'found': True,
+        'anime_name': jikan.get('title_en') or name,
+        'anime_name_jp': jikan.get('title_jp', ''),
+        'episode': 'غير معروف',
+        'similarity': fallback.get('similarity', 0),
+        'timestamp': '',
+        'video_preview': '',
+        'image_preview': jikan.get('image', ''),
+        'detection_method': method,
+        'description': jikan.get('synopsis', ''),
+        'score': jikan.get('score'),
+        'episodes': jikan.get('episodes'),
+        'genres': jikan.get('genres', []),
+        'type': jikan.get('type', ''),
+        'year': jikan.get('year'),
+        'mal_url': jikan.get('url', ''),
+        'search_links': {
+            'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(name)}",
+            'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(name)}",
+            'youtube': f"https://www.youtube.com/results?search_query={url_quote(name + ' anime')}",
+        }
+    }
+
+
 def search_anime_with_saucenao(image_path: str) -> dict | None:
     """Try to identify anime using SauceNAO reverse image search - free API, works with fan art."""
     try:
-        with open(image_path, 'rb') as f:
+        with open(image_path, 'rb') as img_file:
             resp = requests.post(
                 'https://saucenao.com/search.php',
-                data={'db': 999, 'output_type': 2, 'numres': 5},
-                files={'file': ('image.jpg', f, 'image/jpeg')},
-                timeout=20
+                data={'db': 999, 'output_type': 2, 'numres': 8},
+                files={'file': ('image.jpg', img_file, 'image/jpeg')},
+                headers={'User-Agent': 'Mozilla/5.0 (compatible; ARKAN-AI/1.0)'},
+                timeout=25
             )
+
+        logging.info(f'[SauceNAO] HTTP {resp.status_code}')
+
+        if resp.status_code == 429:
+            logging.warning('[SauceNAO] Rate limited (429). Skipping.')
+            return None
         if resp.status_code != 200:
+            logging.warning(f'[SauceNAO] Unexpected status: {resp.status_code} — {resp.text[:200]}')
             return None
 
-        data = resp.json()
+        try:
+            data = resp.json()
+        except Exception:
+            logging.warning(f'[SauceNAO] Non-JSON response: {resp.text[:300]}')
+            return None
+
+        header = data.get('header', {})
+        logging.info(f"[SauceNAO] quota short={header.get('short_remaining')} long={header.get('long_remaining')}")
+
         results = data.get('results', [])
+        logging.info(f'[SauceNAO] Got {len(results)} results')
+
         if not results:
             return None
 
-        # Filter for anime-related results (index 21=AniDB, 37=MAL, 5=Pixiv, 9=Danbooru)
-        ANIME_INDEXES = {21, 37}
+        for r in results:
+            sim = float(r.get('header', {}).get('similarity', 0))
+            idx = r.get('header', {}).get('index_id')
+            rdata = r.get('data', {})
+            logging.info(f'  [SauceNAO] idx={idx} sim={sim:.1f}% data_keys={list(rdata.keys())}')
+
+        # Anime-related indexes: 21=AniDB, 37=Mangadex, 5=Pixiv, 9=Danbooru, 25=Gelbooru, 29=E-Hentai, 36=MangaUpdates
+        ANIME_INDEXES = {5, 9, 21, 25, 37}
         anime_results = [r for r in results if int(r.get('header', {}).get('index_id', 0)) in ANIME_INDEXES]
+        candidates = anime_results if anime_results else results
 
-        # If no dedicated anime DB match, try any result with high similarity
-        candidates = anime_results or results
+        best = max(candidates, key=lambda r: float(r.get('header', {}).get('similarity', 0)))
+        best_sim = float(best.get('header', {}).get('similarity', 0)) / 100.0
 
-        best = None
-        best_sim = 0.0
-        for r in candidates:
-            sim = float(r.get('header', {}).get('similarity', 0)) / 100.0
-            if sim > best_sim:
-                best_sim = sim
-                best = r
+        logging.info(f'[SauceNAO] Best result: sim={best_sim:.2f} data={best.get("data",{})}')
 
-        # Require at least 55% similarity for fan art
-        if not best or best_sim < 0.55:
+        # Lowered threshold to 40% for fan art
+        if best_sim < 0.40:
+            logging.info(f'[SauceNAO] Below threshold ({best_sim:.2f} < 0.40), skipping')
             return None
 
         rdata = best.get('data', {})
-        # Extract anime title from various fields
+        # Extract title from many possible fields
+        creator = rdata.get('creator', '')
+        if isinstance(creator, list):
+            creator = creator[0] if creator else ''
+
         title = (
-            rdata.get('title') or
-            rdata.get('anime') or
             rdata.get('source') or
+            rdata.get('anime') or
+            rdata.get('title') or
             rdata.get('material') or
-            rdata.get('creator', [''])[0] if isinstance(rdata.get('creator'), list) else rdata.get('creator') or ''
+            rdata.get('eng_name') or
+            rdata.get('jp_name') or
+            ''
         )
-        if not title or len(title) < 2:
+
+        logging.info(f'[SauceNAO] Extracted title: "{title}"')
+
+        if not title or len(str(title).strip()) < 2:
+            return None
+
+        return {
+            'anime_name': str(title).strip(),
+            'similarity': round(best_sim * 100, 1),
+            'index_id': best.get('header', {}).get('index_id'),
+        }
+    except Exception as e:
+        logging.warning(f'[SauceNAO] Exception: {e}')
+        return None
+
+
+def search_anime_with_iqdb(image_path: str) -> dict | None:
+    """Try to identify anime using IQDB - free, specifically for anime/manga images."""
+    try:
+        import re
+        with open(image_path, 'rb') as img_file:
+            resp = requests.post(
+                'https://iqdb.org/',
+                files={'file': ('image.jpg', img_file, 'image/jpeg')},
+                headers={'User-Agent': 'Mozilla/5.0 (compatible; ARKAN-AI/1.0)'},
+                timeout=20
+            )
+
+        logging.info(f'[IQDB] HTTP {resp.status_code}')
+        if resp.status_code != 200:
+            return None
+
+        html = resp.text
+
+        # Extract best match section
+        # IQDB result pages contain "Best match" or "Your image" and then results
+        # Look for similarity percentages
+        sim_matches = re.findall(r'(\d{2,3})%\s*similarity', html, re.IGNORECASE)
+        logging.info(f'[IQDB] Similarities found: {sim_matches}')
+
+        if not sim_matches:
+            return None
+
+        best_sim = int(sim_matches[0]) / 100.0
+        if best_sim < 0.50:
+            logging.info(f'[IQDB] Best sim {best_sim:.2f} below threshold')
+            return None
+
+        # Try to extract title from alt text or title attributes near the match
+        # Look for tags like <img alt="..." title="..."> in results
+        title_matches = re.findall(r'(?:alt|title)="([^"]{3,80})"', html)
+        # Filter out noise
+        noise = {'Your image', 'No relevant matches', 'iqdb', '', 'thumbnail'}
+        titles = [t for t in title_matches if t not in noise and not t.startswith('http') and len(t) > 3]
+        logging.info(f'[IQDB] Title candidates: {titles[:5]}')
+
+        title = titles[0] if titles else None
+        if not title:
             return None
 
         return {
             'anime_name': title.strip(),
             'similarity': round(best_sim * 100, 1),
-            'index_id': best.get('header', {}).get('index_id'),
         }
     except Exception as e:
-        logging.warning(f'SauceNAO search failed: {e}')
+        logging.warning(f'[IQDB] Exception: {e}')
         return None
 
 
@@ -1590,78 +1739,24 @@ def search_anime():
         results = data.get('result', [])
 
         if not results:
-            # Fallback: try SauceNAO which works better with fan art / promotional images
-            snao = search_anime_with_saucenao(temp_path)
             safe_remove_file(temp_path)
-            if snao:
-                from urllib.parse import quote as url_quote
-                jikan = get_anime_details_from_jikan(snao['anime_name'])
-                return jsonify({
-                    'found': True,
-                    'anime_name': jikan.get('title_en') or snao['anime_name'],
-                    'anime_name_jp': jikan.get('title_jp', ''),
-                    'episode': 'غير معروف',
-                    'similarity': snao['similarity'],
-                    'timestamp': '',
-                    'video_preview': '',
-                    'image_preview': jikan.get('image', ''),
-                    'detection_method': 'saucenao',
-                    'description': jikan.get('synopsis', ''),
-                    'score': jikan.get('score'),
-                    'episodes': jikan.get('episodes'),
-                    'genres': jikan.get('genres', []),
-                    'type': jikan.get('type', ''),
-                    'year': jikan.get('year'),
-                    'mal_url': jikan.get('url', ''),
-                    'search_links': {
-                        'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(snao['anime_name'])}",
-                        'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(snao['anime_name'])}",
-                        'youtube': f"https://www.youtube.com/results?search_query={url_quote(snao['anime_name'] + ' anime')}",
-                    }
-                })
             return jsonify({
                 'found': False,
-                'message': 'لم يتم العثور على نتائج. جرب استخدام صورة أوضح أو البحث بالاسم.',
-                'suggest_search_by_name': True
+                'message': 'لم يتم التعرف على الأنمي من هذه الصورة.',
+                'suggest_search_by_name': True,
+                'hint': 'هذه الأداة تعمل بشكل أفضل مع لقطات الشاشة من الحلقات. للصور الفنية والترويجية، جرّب البحث بالوصف في التبويب الآخر.'
             })
 
         top_result = results[0]
         similarity = top_result.get('similarity', 0)
 
         if similarity < ANIME_SIMILARITY_THRESHOLD:
-            # Fallback: try SauceNAO
-            snao = search_anime_with_saucenao(temp_path)
             safe_remove_file(temp_path)
-            if snao:
-                from urllib.parse import quote as url_quote
-                jikan = get_anime_details_from_jikan(snao['anime_name'])
-                return jsonify({
-                    'found': True,
-                    'anime_name': jikan.get('title_en') or snao['anime_name'],
-                    'anime_name_jp': jikan.get('title_jp', ''),
-                    'episode': 'غير معروف',
-                    'similarity': snao['similarity'],
-                    'timestamp': '',
-                    'video_preview': '',
-                    'image_preview': jikan.get('image', ''),
-                    'detection_method': 'saucenao',
-                    'description': jikan.get('synopsis', ''),
-                    'score': jikan.get('score'),
-                    'episodes': jikan.get('episodes'),
-                    'genres': jikan.get('genres', []),
-                    'type': jikan.get('type', ''),
-                    'year': jikan.get('year'),
-                    'mal_url': jikan.get('url', ''),
-                    'search_links': {
-                        'myanimelist': jikan.get('url') or f"https://myanimelist.net/anime.php?q={url_quote(snao['anime_name'])}",
-                        'crunchyroll': f"https://www.crunchyroll.com/search?q={url_quote(snao['anime_name'])}",
-                        'youtube': f"https://www.youtube.com/results?search_query={url_quote(snao['anime_name'] + ' anime')}",
-                    }
-                })
             return jsonify({
                 'found': False,
-                'message': 'لم يتم العثور على تطابق دقيق. الرجاء استخدام صورة أوضح أو جرب البحث بالاسم.',
-                'suggest_search_by_name': True
+                'message': f'أقرب نتيجة بنسبة {round(similarity*100)}% — ثقة منخفضة جداً للتأكيد.',
+                'suggest_search_by_name': True,
+                'hint': 'هذه الأداة تعمل بشكل أفضل مع لقطات الشاشة من الحلقات. للصور الفنية جرّب البحث بالوصف.'
             })
 
         safe_remove_file(temp_path)
@@ -1674,34 +1769,8 @@ def search_anime():
             anime_name = title_info.get('english') or title_info.get(
                 'romaji') or title_info.get('native') or 'غير معروف'
         elif isinstance(anilist_info, int):
-            try:
-                anilist_query = '''
-                query ($id: Int) {
-                    Media (id: $id, type: ANIME) {
-                        title {
-                            romaji
-                            english
-                            native
-                        }
-                    }
-                }
-                '''
-                anilist_response = requests.post('https://graphql.anilist.co',
-                                                 json={
-                                                     'query': anilist_query,
-                                                     'variables': {
-                                                         'id': anilist_info
-                                                     }
-                                                 },
-                                                 timeout=10)
-                if anilist_response.status_code == 200:
-                    anilist_data = anilist_response.json()
-                    media = anilist_data.get('data', {}).get('Media', {})
-                    title_info = media.get('title', {})
-                    anime_name = title_info.get('english') or title_info.get(
-                        'romaji') or title_info.get('native') or 'غير معروف'
-            except Exception:
-                anime_name = f'Anilist ID: {anilist_info}'
+            # AniList API may be down — try yuna.moe to get MAL ID, then Jikan
+            anime_name = _resolve_anilist_id(anilist_info)
 
         episode = top_result.get('episode', 'غير معروف')
         from_time = top_result.get('from', 0)
