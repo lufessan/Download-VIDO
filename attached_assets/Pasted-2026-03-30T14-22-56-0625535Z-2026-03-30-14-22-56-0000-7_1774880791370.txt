@@ -1,0 +1,50 @@
+2026-03-30T14:22:56.0625535Z [2026-03-30 14:22:56 +0000] [7] [INFO] Listening at: http://0.0.0.0:10000 (7)
+2026-03-30T14:22:56.062595951Z [2026-03-30 14:22:56 +0000] [7] [INFO] Using worker: gthread
+2026-03-30T14:22:56.065300096Z [2026-03-30 14:22:56 +0000] [8] [INFO] Booting worker with pid: 8
+2026-03-30T14:22:56.200210587Z [2026-03-30 14:22:56 +0000] [7] [INFO] Control socket listening at /root/.gunicorn/gunicorn.ctl
+2026-03-30T14:22:57.994672569Z INFO:root:[Cookies] File created at: /app/cookies.txt
+2026-03-30T14:22:57.99469307Z INFO:root:[Cookies] Original: 23 entries, Filtered (YouTube/Google only): 23 entries
+2026-03-30T14:22:57.99470198Z INFO:root:[Cookies] Working dir: /app
+2026-03-30T14:22:57.994788072Z INFO:root:[Cookies] File size on disk: 3325 bytes
+2026-03-30T14:22:57.994860134Z INFO:root:[Cookies] ✅ Found LOGIN_INFO (.youtube.com)
+2026-03-30T14:22:57.994880544Z INFO:root:[Cookies] ✅ Found SID (.youtube.com)
+2026-03-30T14:22:57.994914815Z INFO:root:[Cookies] ✅ Found HSID (.youtube.com)
+2026-03-30T14:22:57.994939086Z INFO:root:[Cookies] ✅ Found SSID (.youtube.com)
+2026-03-30T14:22:57.994975836Z INFO:root:[Cookies] ✅ Found APISID (.youtube.com)
+2026-03-30T14:22:57.995013777Z INFO:root:[Cookies] ✅ Found SAPISID (.youtube.com)
+2026-03-30T14:22:57.995045588Z INFO:root:[Cookies] ✅ Found __Secure-1PSID (.youtube.com)
+2026-03-30T14:22:57.995057818Z INFO:root:[Cookies] ✅ Found __Secure-3PSID (.youtube.com)
+2026-03-30T14:22:57.99511909Z INFO:root:[Cookies] ✅ Found __Secure-1PAPISID (.youtube.com)
+2026-03-30T14:22:57.99512546Z INFO:root:[Cookies] ✅ Found __Secure-3PAPISID (.youtube.com)
+2026-03-30T14:22:58.676521408Z INFO:root:[DB] Database tables created successfully
+2026-03-30T14:22:58.875586311Z INFO:root:[Admin] Default admin user created (username: admin, password: admin123)
+2026-03-30T14:22:58.875606552Z INFO:root:[Admin] IMPORTANT: Please change the default password immediately!
+2026-03-30T14:22:58.875623032Z INFO:root:============================================================
+2026-03-30T14:22:58.875634212Z INFO:root:Admin dashboard for AI providers is available at: /admin/keys (requires admin login)
+2026-03-30T14:22:58.875703144Z INFO:root:Default admin credentials: username=admin, password=admin123
+2026-03-30T14:22:58.875720554Z INFO:root:Groq provider configured: True
+2026-03-30T14:22:58.875769105Z INFO:root:HuggingFace provider configured: True
+2026-03-30T14:22:58.875780846Z INFO:root:============================================================
+2026-03-30T14:23:07.607545652Z ==> Your service is live 🎉
+2026-03-30T14:23:07.855415137Z ==> 
+2026-03-30T14:23:07.858049622Z ==> ///////////////////////////////////////////////////////////
+2026-03-30T14:23:07.860854856Z ==> 
+2026-03-30T14:23:07.863190703Z ==> Available at your primary URL https://multi-tool-arabic-platform.onrender.com
+2026-03-30T14:23:07.865783745Z ==> 
+2026-03-30T14:23:07.868722427Z ==> ///////////////////////////////////////////////////////////
+2026-03-30T14:25:57.975224166Z INFO:root:[EstimateSize] Using cookies from: /app/cookies.txt (size: 3325 bytes)
+2026-03-30T14:25:57.975243817Z INFO:root:[EstimateSize] Trying WITH cookies
+2026-03-30T14:25:57.975249007Z INFO:root:[EstimateSize] Trying format: bestvideo*+bestaudio*/best* (cookies=yes)
+2026-03-30T14:25:59.730610298Z ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-30T14:25:59.731201043Z WARNING:root:[EstimateSize] Format bestvideo*+bestaudio*/best* failed: ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --c
+2026-03-30T14:25:59.732288138Z INFO:root:[EstimateSize] Retrying WITHOUT cookies (fallback)
+2026-03-30T14:25:59.732302989Z INFO:root:[EstimateSize] Trying format: bestvideo*+bestaudio*/best* (cookies=no)
+2026-03-30T14:26:01.202671386Z ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-30T14:26:01.203066925Z WARNING:root:[EstimateSize] Format bestvideo*+bestaudio*/best* failed: ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --c
+2026-03-30T14:26:01.20451713Z WARNING:root:[EstimateSize] Cookies present but Sign-in still required. Cookie file may be expired.
+2026-03-30T14:26:03.782078812Z INFO:root:[Download] Getting info (cookies=yes)
+2026-03-30T14:26:05.553401015Z ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-30T14:26:05.553983359Z WARNING:root:[Download] Info extraction failed (cookies=yes): ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --c
+2026-03-30T14:26:05.555251359Z INFO:root:[Download] Getting info (cookies=no)
+2026-03-30T14:26:06.939896789Z ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --cookies for the authentication. See  https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp  for how to manually pass cookies. Also see  https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies  for tips on effectively exporting YouTube cookies
+2026-03-30T14:26:06.940261128Z WARNING:root:[Download] Info extraction failed (cookies=no): ERROR: [youtube] GlEKvonWaH4: Sign in to confirm you’re not a bot. Use --cookies-from-browser or --c
