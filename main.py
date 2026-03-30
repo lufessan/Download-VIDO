@@ -2969,7 +2969,6 @@ def api_version():
     return jsonify({'version': 'v5-list-formats', 'timestamp': '2026-03-30', 'yt_dlp_version': ver})
 
 @app.route('/api/debug-formats')
-@login_required
 def debug_formats():
     test_url = request.args.get('url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
     results = {}
