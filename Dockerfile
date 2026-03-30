@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y \
 
 ENV DENO_DIR=/tmp/deno
 
+RUN mkdir -p /etc && echo "--remote-components ejs:github" > /etc/yt-dlp.conf
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
