@@ -8,9 +8,11 @@ RUN apt-get update && apt-get install -y \
     tesseract-ocr-ara \
     tesseract-ocr-eng \
     curl \
-    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://deno.land/install.sh | DENO_INSTALL=/usr/local sh
+
+ENV DENO_DIR=/tmp/deno
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
