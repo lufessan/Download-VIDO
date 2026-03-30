@@ -33,7 +33,20 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 YDL_BASE_OPTS = {
-    'remote_components': 'ejs:github',
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['ios', 'mweb', 'tv_embedded'],
+            'skip': ['hls', 'dash'],
+        }
+    },
+    'http_headers': {
+        'User-Agent': 'com.google.ios.youtube/19.29.1 (iPhone16,2; U; CPU iOS 17_5_1 like Mac OS X)',
+        'X-Youtube-Client-Name': '5',
+        'X-Youtube-Client-Version': '19.29.1',
+    },
+    'socket_timeout': 30,
+    'retries': 5,
+    'fragment_retries': 5,
 }
 
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
