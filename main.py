@@ -32,6 +32,10 @@ from services.ai_providers import ai_manager, AIProviderError, RateLimitError, P
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+YDL_BASE_OPTS = {
+    'remote_components': 'ejs:github',
+}
+
 # --- كود إنشاء ملف الكوكيز تلقائياً من إعدادات السيرفر ---
 COOKIES_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'cookies.txt')
 cookie_content = os.environ.get('COOKIE_CONTENT')
@@ -195,6 +199,7 @@ def download_audio_from_youtube(url: str, output_dir: str = None) -> str:
         try:
             logger.info(f"Attempting YouTube download with format: {format_str}")
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 "format": format_str,
                 "outtmpl": out_template,
                 "noplaylist": True,
@@ -1286,6 +1291,7 @@ def video_info():
             return jsonify({'error': 'الرجاء إدخال رابط الفيديو'}), 400
 
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
@@ -1367,6 +1373,7 @@ def get_video_formats():
         logging.info(f"جلب الجودات المتاحة للفيديو: {url}")
 
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'quiet': True,
             'no_warnings': True,
             'skip_download': True,
@@ -1470,6 +1477,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
         # تحميل الصوت فقط
         output_template = os.path.join(output_dir, f'audio_{unique_id}.%(ext)s')
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'format': 'bestaudio/best',
             'outtmpl': output_template,
             'noplaylist': True,
@@ -1493,6 +1501,7 @@ def download_youtube_media(url: str, quality: str, download_type: str, output_di
         format_string = f'bestvideo*[height<={height}]+bestaudio*/bestvideo*+bestaudio*/best*'
         
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'format': format_string,
             'merge_output_format': 'mp4',
             'outtmpl': output_template,
@@ -3021,6 +3030,7 @@ def cookie_check():
             result['youtube_google_lines'] = len(yt_lines)
             result['starts_with_netscape'] = content.strip().startswith('# Netscape') or content.strip().startswith('# HTTP Cookie')
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 'quiet': True,
                 'no_warnings': True,
                 'skip_download': True,
@@ -3053,6 +3063,7 @@ def estimate_size():
 
         has_cookies_est = os.path.exists(COOKIES_FILE_PATH)
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
@@ -3240,6 +3251,7 @@ def download_playlist():
 
         if download_format == 'audio':
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 'format': 'bestaudio*/bestaudio/best*',
                 'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
                 'noplaylist': False,
@@ -3257,6 +3269,7 @@ def download_playlist():
             }
         else:
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 'format': 'bestvideo*+bestaudio*/best*',
                 'merge_output_format': 'mp4',
                 'outtmpl': os.path.join(output_dir, '%(playlist_index)s - %(title)s.%(ext)s'),
@@ -3456,6 +3469,7 @@ def download_video():
 
         if download_format == 'audio':
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 'format': 'bestaudio*/bestaudio/best*',
                 'outtmpl': output_template + '.%(ext)s',
                 'noplaylist': True,
@@ -3479,6 +3493,7 @@ def download_video():
         else:
             if is_tiktok or is_instagram or is_twitter:
                 ydl_opts = {
+                    **YDL_BASE_OPTS,
                     'format': 'bestvideo*+bestaudio*/best*',
                     'merge_output_format': 'mp4',
                     'outtmpl': output_template + '.%(ext)s',
@@ -3510,6 +3525,7 @@ def download_video():
             else:
                 # YouTube and other sites — wildcard format chain that always succeeds
                 ydl_opts = {
+                    **YDL_BASE_OPTS,
                     'format': 'bestvideo*+bestaudio*/best*',
                     'merge_output_format': 'mp4',
                     'outtmpl': output_template + '.%(ext)s',
@@ -3833,6 +3849,7 @@ def transcribe_video():
                                       f'video_audio_{unique_id}.mp3')
 
             ydl_opts = {
+                **YDL_BASE_OPTS,
                 'format':
                 'bestaudio/best',
                 'outtmpl':
@@ -4081,6 +4098,7 @@ def get_audio():
     try:
         temp_dir = tempfile.gettempdir()
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'format': 'bestaudio/best',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -4942,6 +4960,7 @@ def get_video_info():
         logging.info(f"Fetching video info for: {url}")
         
         ydl_opts = {
+            **YDL_BASE_OPTS,
             'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
