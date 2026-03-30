@@ -2970,43 +2970,33 @@ def api_version():
 
 @app.route('/api/debug-formats')
 def debug_formats():
+    import subprocess
     test_url = request.args.get('url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
     results = {}
     has_cookies = os.path.exists(COOKIES_FILE_PATH)
 
-    for label, opts in [
-        ('with_cookies', {'cookiefile': COOKIES_FILE_PATH} if has_cookies else {}),
-        ('no_cookies', {}),
-    ]:
-        ydl_opts = {
-            'quiet': True,
-            'no_warnings': True,
-            'skip_download': True,
-            'noplaylist': True,
-            'age_limit': 99,
-            **opts,
-        }
+    cmd_base = ['yt-dlp', '--list-formats', '--no-playlist', test_url]
+    cmd_cookies = cmd_base + ['--cookies', COOKIES_FILE_PATH] if has_cookies else None
+
+    for label, cmd in [('with_cookies', cmd_cookies), ('no_cookies', cmd_base)]:
+        if cmd is None:
+            results[label] = {'skipped': 'no cookie file'}
+            continue
         try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(test_url, download=False)
-                formats = info.get('formats', [])
-                results[label] = {
-                    'total_formats': len(formats),
-                    'title': info.get('title', '?'),
-                    'formats': [{
-                        'id': f.get('format_id'),
-                        'ext': f.get('ext'),
-                        'height': f.get('height'),
-                        'vcodec': f.get('vcodec', 'none'),
-                        'acodec': f.get('acodec', 'none'),
-                        'filesize': f.get('filesize') or f.get('filesize_approx'),
-                        'url_available': bool(f.get('url')),
-                        'protocol': f.get('protocol'),
-                    } for f in formats]
-                }
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            results[label] = {
+                'stdout': proc.stdout[-2000:] if proc.stdout else '',
+                'stderr': proc.stderr[-1000:] if proc.stderr else '',
+                'returncode': proc.returncode,
+            }
+        except subprocess.TimeoutExpired:
+            results[label] = {'error': 'timeout after 30s'}
         except Exception as e:
             results[label] = {'error': str(e)[:200]}
 
+    results['yt_dlp_version'] = yt_dlp.version.__version__
+    results['cookies_exist'] = has_cookies
+    results['cookies_path'] = COOKIES_FILE_PATH
     return jsonify(results)
 
 @app.route('/cookie-check', methods=['POST'])
