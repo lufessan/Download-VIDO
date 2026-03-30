@@ -3137,8 +3137,6 @@ def estimate_size():
                 except yt_dlp.utils.DownloadError as e:
                     last_error = str(e)
                     logging.warning(f"[EstimateSize] Format {fmt} failed: {last_error[:100]}")
-                    if 'Sign in' in last_error or 'bot' in last_error.lower():
-                        break
                     if 'Requested format is not available' in last_error:
                         continue
                     break
@@ -3407,22 +3405,23 @@ def download_video():
         has_cookies = os.path.exists(COOKIES_FILE_PATH)
 
         info_opts = {
+            **YDL_BASE_OPTS,
             'format': 'bestvideo*+bestaudio*/best*',
             'quiet': True,
             'no_warnings': True,
             'socket_timeout': 1800,
             'noplaylist': True,
-            'retries': 3,
+            'retries': 5,
             'age_limit': 99,
             'nocheckcertificate': True,
             'geo_bypass': True,
+            'geo_bypass_country': 'US',
             'http_headers': {
                 'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
                 'Accept':
                 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.5',
-                'Referer': 'https://www.youtube.com/',
             },
         }
 
@@ -3442,11 +3441,7 @@ def download_video():
             except Exception as e:
                 info_error = str(e)
                 logging.warning(f"[Download] Info extraction failed (cookies={'yes' if try_cookies else 'no'}): {info_error[:100]}")
-                if 'Sign in' in info_error or 'bot' in info_error.lower():
-                    continue
-                if 'Requested format is not available' in info_error:
-                    continue
-                break
+                continue
 
         if not info:
             return jsonify(
