@@ -2966,7 +2966,49 @@ def api_version():
         ver = yt_dlp.version.__version__
     except Exception:
         ver = 'unknown'
-    return jsonify({'version': 'v4-no-extractor-args', 'timestamp': '2026-03-30', 'yt_dlp_version': ver})
+    return jsonify({'version': 'v5-list-formats', 'timestamp': '2026-03-30', 'yt_dlp_version': ver})
+
+@app.route('/api/debug-formats')
+@login_required
+def debug_formats():
+    test_url = request.args.get('url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    results = {}
+    has_cookies = os.path.exists(COOKIES_FILE_PATH)
+
+    for label, opts in [
+        ('with_cookies', {'cookiefile': COOKIES_FILE_PATH} if has_cookies else {}),
+        ('no_cookies', {}),
+    ]:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'skip_download': True,
+            'noplaylist': True,
+            'age_limit': 99,
+            **opts,
+        }
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(test_url, download=False)
+                formats = info.get('formats', [])
+                results[label] = {
+                    'total_formats': len(formats),
+                    'title': info.get('title', '?'),
+                    'formats': [{
+                        'id': f.get('format_id'),
+                        'ext': f.get('ext'),
+                        'height': f.get('height'),
+                        'vcodec': f.get('vcodec', 'none'),
+                        'acodec': f.get('acodec', 'none'),
+                        'filesize': f.get('filesize') or f.get('filesize_approx'),
+                        'url_available': bool(f.get('url')),
+                        'protocol': f.get('protocol'),
+                    } for f in formats]
+                }
+        except Exception as e:
+            results[label] = {'error': str(e)[:200]}
+
+    return jsonify(results)
 
 @app.route('/cookie-check', methods=['POST'])
 @login_required
