@@ -19,5 +19,4 @@ services:
 
 databases:
   - name: multi-tool-db
-    type: postgres
     plan: free
